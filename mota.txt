@@ -1,0 +1,434 @@
+Hãy kiểm tra toàn bộ project hiện tại và nâng cấp thành một website quản lý code tên cho giải đấu Free Fire.
+
+YÊU CẦU QUAN TRỌNG:
+- Không xóa chức năng đang hoạt động.
+- Giữ nguyên backend hiện có nếu có thể.
+- Chỉ sửa cấu trúc khi thật sự cần thiết.
+- Code phải chạy được bằng npm start.
+- Giao diện responsive trên máy tính và điện thoại.
+- Không dùng dữ liệu giả cho các chức năng chính.
+- Tất cả nút phải hoạt động thật.
+- Hiển thị thông báo thành công và lỗi rõ ràng bằng tiếng Việt.
+
+==================================================
+1. PHONG CÁCH GIAO DIỆN
+==================================================
+
+Thiết kế theo phong cách giải đấu Free Fire cao cấp:
+
+- Nền tối, fantasy, đen tím hoặc đen đỏ.
+- Có lớp phủ tối để chữ dễ đọc.
+- Màu nhấn chính: hồng đỏ hoặc đỏ rượu.
+- Logo màu vàng đặt phía trên tiêu đề.
+- Tiêu đề lớn:
+  "CỔNG QUẢN LÝ CODE TÊN"
+- Font tiêu đề đậm, mạnh, phong cách esports.
+- Các khung nội dung dùng nền đen trong suốt.
+- Viền mảnh màu xám, tím hoặc hồng.
+- Nút có kiểu góc cắt chéo nhẹ như giao diện game.
+- Hiệu ứng hover nhẹ, không dùng animation quá nặng.
+- Nội dung chính có chiều rộng tối đa khoảng 1100–1200px.
+- Bố cục phải cân đối, không để nội dung quá nhỏ ở giữa màn hình.
+
+Thanh đầu trang gồm:
+- Logo.
+- Tiêu đề.
+- Mô tả ngắn.
+- Nút "TRANG CHỦ".
+- Nút "BTC ĐĂNG NHẬP" hoặc "ĐĂNG XUẤT" tùy trạng thái.
+
+==================================================
+2. TRANG CHỌN CUSTOM
+==================================================
+
+Trang chủ hiển thị danh sách custom hiện có.
+
+Tiêu đề khu vực:
+"CHỌN CUSTOM"
+
+Mô tả:
+"Mặc định có MP, XN, HV. Nếu custom khác, hãy liên hệ BTC để thêm custom."
+
+Mỗi custom hiển thị dạng card gồm:
+- Tên custom, ví dụ: HV, MP, XN.
+- Dòng nhỏ "SLOT".
+- Mô tả "THAM GIA CUSTOM HV".
+- Số đội đã đăng ký.
+- Giới hạn tối đa 15 đội.
+- Trạng thái:
+  + Còn chỗ.
+  + Đã đầy.
+  + Đã khóa.
+- Có thể hiển thị màu riêng của custom nếu quản trị viên đã chọn.
+
+Khi bấm vào card custom:
+- Chuyển tới trang nhập thông tin đội của custom đó.
+- URL nên có dạng:
+  /custom/HV
+  hoặc
+  /submit.html?custom=HV
+
+Nếu chưa chọn custom thì hiển thị:
+"Chọn một custom để nhập danh sách team."
+
+Custom bị khóa hoặc đã đủ 15 đội:
+- Không cho gửi thêm.
+- Card hiển thị trạng thái rõ ràng.
+- Nút/card bị vô hiệu hóa.
+
+==================================================
+3. TRANG NHẬP THÔNG TIN ĐỘI
+==================================================
+
+Tiêu đề:
+"THÔNG TIN CUSTOM {TÊN_CUSTOM}"
+
+Form gồm:
+
+A. Tên team
+- Bắt buộc nhập.
+- Ví dụ: RAB.
+- Không cho chỉ nhập khoảng trắng.
+- Chuẩn hóa bằng trim.
+- Giới hạn độ dài hợp lý, ví dụ 2–40 ký tự.
+
+B. Danh sách thành viên
+Mỗi dòng gồm:
+- ID game.
+- Tên ingame.
+- Nút xóa thành viên.
+- Nút "+ THÊM THÀNH VIÊN".
+
+Yêu cầu:
+- Tối thiểu 1 thành viên.
+- Tối đa có thể cấu hình, mặc định 6 thành viên.
+- ID game chỉ được chứa số.
+- Không cho trùng ID trong cùng một đội.
+- Không cho ID đã tồn tại ở đội khác trong cùng custom.
+- Không cho để trống tên ingame.
+- Hỗ trợ Unicode và ký tự đặc biệt trong tên.
+
+C. Ô nhập nhanh
+Tiêu đề:
+"NHẬP NHANH TÊN TEAM, ID VÀ TÊN GAME"
+
+Cho phép người dùng dán nhiều định dạng như:
+
+RAB
+2120337637 Rab.iubich
+Rab.iuThienly-6598757580
+1897983397.Rab.dm
+
+Hoặc:
+
+NVT.KHADA - 992836236
+992836236 - NVT.KHADA
+992836236 NVT.KHADA
+NVT.KHADA 992836236
+
+Hệ thống phải:
+- Tự nhận biết ID là chuỗi số.
+- Tách tên ingame và ID.
+- Nếu dòng đầu không có ID thì coi là tên team.
+- Bỏ qua dòng trống.
+- Không làm mất dấu tiếng Việt hoặc ký tự đặc biệt.
+- Hiển thị lỗi cụ thể ở dòng không đọc được.
+- Sau khi đọc thành công, tự điền vào các ô thành viên.
+
+Các nút:
+- "ĐỌC Ô NHẬP NHANH"
+- "GỬI VỀ BTC"
+- "CẬP NHẬT THÔNG TIN"
+- "CHỌN CUSTOM KHÁC"
+
+Khi bấm "GỬI VỀ BTC":
+- Kiểm tra toàn bộ dữ liệu.
+- Xác nhận custom vẫn còn chỗ.
+- Kiểm tra tên team hoặc ID bị trùng.
+- Lưu dữ liệu về backend.
+- Hiển thị thông báo gửi thành công.
+- Không gửi lặp lại khi người dùng bấm nút nhiều lần.
+- Sau khi gửi thành công, lưu mã submission hoặc mã chỉnh sửa.
+
+Chức năng cập nhật:
+- Đội có thể sửa thông tin đã gửi bằng mã chỉnh sửa hoặc token riêng.
+- Không cho đội khác sửa dữ liệu.
+- Nếu custom đã bị BTC khóa thì không cho cập nhật.
+
+==================================================
+4. TRANG ĐĂNG NHẬP BTC
+==================================================
+
+Tạo trang đăng nhập quản trị riêng.
+
+Form gồm:
+- Tài khoản hoặc mật khẩu quản trị.
+- Nút đăng nhập.
+- Hiển thị/ẩn mật khẩu.
+- Thông báo sai mật khẩu.
+
+Yêu cầu:
+- Không lưu mật khẩu quản trị trong JavaScript phía frontend.
+- Dùng biến môi trường:
+  ADMIN_KEY
+  hoặc tài khoản quản trị lưu ở backend.
+- Sau khi đăng nhập, backend cấp session hoặc token.
+- Không truyền mật khẩu quản trị trực tiếp trên URL.
+- Trang admin phải bị chặn khi chưa đăng nhập.
+- Có nút đăng xuất.
+
+==================================================
+5. TRANG QUẢN TRỊ BTC
+==================================================
+
+Tiêu đề:
+"BẢNG ĐIỀU KHIỂN CUSTOM"
+
+Khu vực bên trái hiển thị danh sách custom.
+
+Mỗi custom gồm:
+- Tên custom.
+- Số team.
+- Tổng số player.
+- TeamRegion hiện tại.
+- Ô chọn màu.
+- Nút "MỞ" hoặc "XEM".
+- Nút "LƯU MÀU CUSTOM".
+- Nút "XÓA CUSTOM".
+- Nút khóa/mở nhận đăng ký.
+
+Cho phép BTC thêm custom:
+- Ô nhập tên custom hoặc TeamRegion.
+- Nút "THÊM".
+- Không cho tên custom trùng.
+- Tên custom được trim và chuyển thành định dạng phù hợp.
+- Có xác nhận trước khi xóa custom.
+- Không xóa nhầm khi custom đang có dữ liệu nếu chưa xác nhận.
+
+Khi bấm "MỞ":
+- Hiển thị danh sách các team trong custom đó.
+- Mỗi team hiển thị:
+  + Tên team.
+  + Thời gian gửi.
+  + Danh sách người chơi.
+  + ID game.
+  + Tên ingame.
+  + Trạng thái.
+- BTC có thể:
+  + Sửa tên team.
+  + Sửa tên ingame.
+  + Sửa ID.
+  + Xóa người chơi.
+  + Thêm người chơi.
+  + Xóa đội.
+  + Duyệt đội.
+  + Từ chối đội.
+  + Chuyển đội sang custom khác.
+- Mọi thao tác xóa phải có hộp xác nhận.
+
+Khu vực bên phải:
+"TEAM TRONG {TÊN_CUSTOM}"
+
+Có các nút:
+- "TẢI JSON CUSTOM NÀY"
+- "TẢI JSON TẤT CẢ CUSTOM"
+- "XÓA DỮ LIỆU CUSTOM NÀY"
+- "LÀM MỚI"
+
+==================================================
+6. CHỨC NĂNG NHẬP NHIỀU TEAM CHO BTC
+==================================================
+
+Tạo textarea để BTC dán nhiều team một lần.
+
+Ví dụ:
+
+PTE 3975285885 FS Snaw 3200451115 TG vanbinn 8367236617
+@anthus.jr 9678588182 hajun
+AWE 10253674281 chuoichien 1004978813 krime
+
+Hệ thống cần:
+- Tách từng team dựa trên dòng hoặc cấu trúc dữ liệu.
+- Tách từng cặp ID và tên.
+- Hiển thị bản xem trước trước khi lưu.
+- Cho BTC sửa dữ liệu đọc sai.
+- Báo rõ dòng nào không hợp lệ.
+- Không tự lưu dữ liệu sai.
+
+Các nút:
+- "ĐỌC DANH SÁCH GIẢI"
+- "NẠP NHIỀU TEAM"
+
+==================================================
+7. XUẤT FILE PlayerNameOverwrite.json
+==================================================
+
+File tải về phải có đúng cấu trúc:
+
+{
+  "PlayerNameList": [
+    {
+      "PlayerID": 992836236,
+      "PlayerNameOverwrite": "NVT.KHADA",
+      "PlayerNation": "NVT",
+      "Color": "#000000"
+    }
+  ],
+  "TeamRegionList": [
+    {
+      "TeamID": 1,
+      "TeamRegion": "HV",
+      "Color": "#000000"
+    }
+  ]
+}
+
+Quy tắc:
+
+PlayerID:
+- Là số, không phải chuỗi.
+- Tuy nhiên khi xử lý trong JavaScript cần tránh mất độ chính xác.
+- ID game có thể lớn, vì vậy kiểm tra giới hạn Number.MAX_SAFE_INTEGER.
+- Nếu ID vượt giới hạn an toàn thì phải có cách xử lý phù hợp hoặc cảnh báo.
+
+PlayerNameOverwrite:
+- Là tên ingame đã được BTC duyệt.
+- Giữ nguyên chữ hoa, chữ thường, dấu và ký tự đặc biệt.
+
+PlayerNation:
+- Mặc định là tên team.
+- Cho BTC sửa riêng nếu cần.
+
+Color:
+- Mặc định "#000000".
+- Có thể lấy theo màu custom hoặc màu team tùy cấu hình.
+
+TeamRegionList:
+- Luôn tạo đủ 15 TeamID cho một custom.
+- TeamID chạy từ 1 đến 15.
+- TeamRegion là tên custom hoặc tên giải do BTC cấu hình.
+- Color lấy từ màu custom.
+- Nếu custom chưa đủ 15 đội thì vẫn tạo đủ TeamID từ 1 đến 15.
+
+Khi tải JSON của một custom:
+- Chỉ chứa player thuộc custom được chọn.
+- Không chứa bản ghi trùng PlayerID.
+- Chỉ lấy đội đã được BTC duyệt nếu hệ thống có trạng thái duyệt.
+
+Khi tải tất cả:
+- Gom dữ liệu từ tất cả custom.
+- Kiểm tra ID trùng giữa các custom.
+- Nếu có ID trùng thì hiển thị cảnh báo cho BTC trước khi tải.
+
+Tên file:
+PlayerNameOverwrite.json
+
+File phải dùng UTF-8 và không làm lỗi tiếng Việt.
+
+==================================================
+8. LƯU TRỮ DỮ LIỆU
+==================================================
+
+Kiểm tra backend hiện tại.
+
+Nếu project đang dùng JSON:
+- Lưu dữ liệu an toàn trong thư mục data.
+- Không ghi file trực tiếp theo cách có thể làm hỏng dữ liệu khi nhiều người gửi cùng lúc.
+- Dùng ghi file tạm rồi rename.
+- Tạo file mặc định khi chưa tồn tại.
+- Có backup dữ liệu định kỳ hoặc trước khi xóa.
+
+Nếu website deploy trên Render:
+- Lưu ý filesystem của Render có thể bị mất sau khi restart/deploy.
+- Ưu tiên dùng PostgreSQL hoặc database có lưu trữ lâu dài.
+- Nếu chưa dùng database, hãy tách lớp lưu trữ để sau này chuyển sang database dễ dàng.
+
+Dữ liệu cần lưu:
+- Customs.
+- Teams.
+- Players.
+- Trạng thái duyệt.
+- Ngày tạo.
+- Ngày cập nhật.
+- Edit token của đội.
+- Màu custom.
+- Trạng thái khóa/mở custom.
+
+==================================================
+9. API BACKEND
+==================================================
+
+Tạo hoặc kiểm tra các API:
+
+Public:
+- GET /api/customs
+- GET /api/customs/:id
+- POST /api/submissions
+- GET /api/submissions/:editToken
+- PUT /api/submissions/:editToken
+
+Admin:
+- POST /api/admin/login
+- POST /api/admin/logout
+- GET /api/admin/customs
+- POST /api/admin/customs
+- PUT /api/admin/customs/:id
+- DELETE /api/admin/customs/:id
+- GET /api/admin/customs/:id/teams
+- PUT /api/admin/teams/:id
+- DELETE /api/admin/teams/:id
+- POST /api/admin/teams/:id/approve
+- POST /api/admin/teams/:id/reject
+- GET /api/admin/export/:customId
+- GET /api/admin/export-all
+
+Tất cả API phải:
+- Validate dữ liệu ở backend.
+- Trả về JSON thống nhất.
+- Có status code đúng.
+- Không để người dùng gửi HTML/script gây XSS.
+- Không để lỗi backend làm lộ thông tin nhạy cảm.
+
+Dạng response thống nhất:
+
+{
+  "success": true,
+  "message": "Gửi danh sách thành công",
+  "data": {}
+}
+
+Khi lỗi:
+
+{
+  "success": false,
+  "message": "ID game đã tồn tại",
+  "errors": []
+}
+
+==================================================
+10. KIỂM TRA VÀ SỬA LỖI
+==================================================
+
+Sau khi sửa code, hãy tự kiểm tra:
+
+1. npm install chạy được.
+2. npm start chạy được.
+3. Không có lỗi JavaScript trong Console.
+4. Trang chủ tải được danh sách custom.
+5. Chọn custom mở đúng form.
+6. Đọc ô nhập nhanh đúng nhiều định dạng.
+7. Gửi đội về backend thành công.
+8. Đăng nhập BTC thành công.
+9. Admin xem được đội vừa gửi.
+10. Admin sửa và xóa được dữ liệu.
+11. Xuất JSON đúng cấu trúc.
+12. JSON không có ID trùng.
+13. Giao diện hoạt động trên màn hình nhỏ.
+14. Reload trang không làm mất dữ liệu.
+15. Deploy trên Render không bị lỗi đường dẫn.
+
+Sau khi hoàn thành:
+- Liệt kê các file đã sửa.
+- Giải thích ngắn gọn từng thay đổi.
+- Không chỉ đưa hướng dẫn, hãy trực tiếp chỉnh sửa code trong workspace.
+- Chạy thử project và sửa hết lỗi xuất hiện.

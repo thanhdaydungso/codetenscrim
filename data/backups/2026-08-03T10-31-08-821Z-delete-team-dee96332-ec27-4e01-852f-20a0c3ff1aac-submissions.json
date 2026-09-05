@@ -1,0 +1,65 @@
+[
+  {
+    "id": "dee96332-ec27-4e01-852f-20a0c3ff1aac",
+    "editToken": "153ebbe128e665ad1128e62cd79d7199d7d15e0ddddb3f57",
+    "teamName": "WDE",
+    "customId": "XN",
+    "contact": "",
+    "note": "",
+    "color": "",
+    "players": [
+      {
+        "playerId": "448107501",
+        "playerName": "WDE.Foxxz"
+      },
+      {
+        "playerId": "3930506845",
+        "playerName": "WDE.3107"
+      },
+      {
+        "playerId": "10033075443",
+        "playerName": "WDE.LOUIS"
+      },
+      {
+        "playerId": "6600501509",
+        "playerName": "WDE.Danger"
+      }
+    ],
+    "teamSlot": 1,
+    "status": "approved",
+    "createdAt": "2026-08-03T10:08:11.228Z",
+    "updatedAt": "2026-08-03T10:17:01.348Z",
+    "playerNation": "WDE"
+  },
+  {
+    "id": "e13cb6b3-7532-4630-b2dc-006d3cc7b921",
+    "editToken": "23b3f425994e7e71e2d96d022daf3a86a0eb6b41a3b6ef29",
+    "teamName": "NGD",
+    "customId": "XN",
+    "contact": "",
+    "note": "",
+    "color": "",
+    "players": [
+      {
+        "playerId": "2408501959",
+        "playerName": "NGD.emduy"
+      },
+      {
+        "playerId": "2168215046",
+        "playerName": "NGD.DRAGON"
+      },
+      {
+        "playerId": "2969332902",
+        "playerName": "NGD.HDang"
+      },
+      {
+        "playerId": "380550189",
+        "playerName": "NGD.NamLe"
+      }
+    ],
+    "teamSlot": 2,
+    "status": "approved",
+    "createdAt": "2026-08-03T10:11:06.189Z",
+    "updatedAt": "2026-08-03T10:11:06.189Z"
+  }
+]

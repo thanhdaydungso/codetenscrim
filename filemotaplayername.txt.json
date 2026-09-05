@@ -1,0 +1,376 @@
+Hãy sửa chức năng xuất file PlayerNameOverwrite.json để file tải xuống luôn được tạo từ dữ liệu mới nhất mà người dùng và BTC đã cập nhật trên website.
+
+VẤN ĐỀ HIỆN TẠI:
+- File tải xuống vẫn chứa dữ liệu cũ hoặc dữ liệu mẫu.
+- Dữ liệu người dùng nhập ở phần "Thêm code tên" chưa được đồng bộ vào file xuất.
+- Khi người dùng cập nhật tên ingame, ID game hoặc tên team, file tải xuống vẫn có giá trị cũ.
+- PlayerID đang bị xuất trùng nhiều lần.
+- TeamRegion đang bị lấy cố định thay vì lấy theo custom hiện tại.
+- Có khả năng chức năng xuất đang đọc trực tiếp file JSON mẫu hoặc mảng dữ liệu tĩnh.
+
+MỤC TIÊU:
+Khi BTC bấm "TẢI JSON CUSTOM NÀY" hoặc "TẢI JSON TẤT CẢ", backend phải đọc dữ liệu mới nhất từ nơi lưu trữ hiện tại và tạo file JSON ngay tại thời điểm tải.
+
+==================================================
+1. NGUỒN DỮ LIỆU DUY NHẤT
+==================================================
+
+Dữ liệu dùng để xuất JSON phải lấy từ backend/database hiện tại.
+
+Không được:
+- Đọc lại file PlayerNameOverwrite.json mẫu để làm dữ liệu đầu ra.
+- Dùng mảng player được viết cứng trong JavaScript.
+- Dùng dữ liệu trong localStorage làm nguồn chính.
+- Dùng dữ liệu đã cache từ lúc server khởi động.
+- Nối dữ liệu mới vào danh sách cũ mà không kiểm tra trùng.
+
+Nguồn dữ liệu chính phải là dữ liệu mà website đang lưu sau khi:
+- Người dùng gửi code tên.
+- Người dùng cập nhật code tên.
+- BTC sửa thông tin đội.
+- BTC sửa ID game.
+- BTC sửa tên ingame.
+- BTC sửa tên team hoặc PlayerNation.
+- BTC thêm hoặc xóa thành viên.
+- BTC duyệt hoặc từ chối đội.
+- BTC chuyển đội sang custom khác.
+
+==================================================
+2. ĐỒNG BỘ KHI NGƯỜI DÙNG CẬP NHẬT
+==================================================
+
+Kiểm tra luồng cập nhật ở phần "Thêm code tên".
+
+Khi người dùng bấm "CẬP NHẬT THÔNG TIN":
+- Phải cập nhật đúng submission/team đã tồn tại.
+- Không được tạo thêm một team mới.
+- Không được nối thêm một bản sao của các player cũ.
+- Cập nhật trường updatedAt.
+- Xóa các thành viên cũ đã bị người dùng loại bỏ.
+- Thêm thành viên mới.
+- Thay thế tên hoặc ID đã sửa.
+- Dữ liệu sau cập nhật phải được lưu xuống backend/database trước khi báo thành công.
+
+Sử dụng editToken hoặc ID của submission để cập nhật đúng bản ghi.
+
+Ví dụ:
+
+Trước khi cập nhật:
+
+Team: NVT
+PlayerID: 992836236
+PlayerNameOverwrite: NVT.KHADA
+
+Sau khi người dùng sửa thành:
+
+Team: NVT ESPORT
+PlayerID: 992836236
+PlayerNameOverwrite: NVT.KHADA99
+
+File tải xuống sau đó phải có:
+
+{
+  "PlayerID": 992836236,
+  "PlayerNameOverwrite": "NVT.KHADA99",
+  "PlayerNation": "NVT ESPORT",
+  "Color": "#000000"
+}
+
+Không được còn bản ghi cũ "NVT.KHADA".
+
+==================================================
+3. TẠO FILE MỚI MỖI LẦN TẢI
+==================================================
+
+Khi nhấn nút tải file:
+
+1. Frontend gọi API export.
+2. Backend đọc lại dữ liệu mới nhất từ storage/database.
+3. Backend lọc dữ liệu theo custom đang chọn.
+4. Backend chuẩn hóa dữ liệu.
+5. Backend kiểm tra trùng.
+6. Backend tạo object JSON mới.
+7. Backend trả file trực tiếp về trình duyệt.
+
+Không lưu một file JSON cố định rồi tải lại file cũ.
+
+API gợi ý:
+
+GET /api/admin/export/:customId
+GET /api/admin/export-all
+
+Response tải file cần có header:
+
+Content-Type: application/json; charset=utf-8
+Content-Disposition: attachment; filename="PlayerNameOverwrite.json"
+Cache-Control: no-store, no-cache, must-revalidate
+
+Frontend nên thêm timestamp vào URL hoặc dùng fetch với cache: "no-store" để tránh trình duyệt tải bản cũ.
+
+==================================================
+4. QUY TẮC TẠO PlayerNameList
+==================================================
+
+Mỗi thành viên hiện tại tạo thành một object:
+
+{
+  "PlayerID": 992836236,
+  "PlayerNameOverwrite": "NVT.KHADA",
+  "PlayerNation": "NVT",
+  "Color": "#000000"
+}
+
+Ánh xạ dữ liệu:
+
+- PlayerID:
+  Lấy từ ID game mới nhất của thành viên.
+
+- PlayerNameOverwrite:
+  Lấy từ tên ingame/code tên mới nhất mà người dùng hoặc BTC đã cập nhật.
+
+- PlayerNation:
+  Ưu tiên trường PlayerNation riêng nếu BTC đã chỉnh.
+  Nếu chưa có thì dùng tên team mới nhất.
+
+- Color:
+  Ưu tiên màu riêng của team.
+  Nếu không có thì dùng màu custom.
+  Nếu vẫn không có thì dùng "#000000".
+
+Chỉ xuất:
+- Team thuộc custom đang chọn.
+- Team chưa bị xóa.
+- Player chưa bị xóa.
+- Team đã được duyệt, nếu hệ thống đang có bước duyệt.
+
+Nếu hệ thống không bắt buộc duyệt thì phải ghi rõ trong code và dùng trạng thái hiện hành phù hợp.
+
+==================================================
+5. KHÔNG CHO TRÙNG PlayerID
+==================================================
+
+Trước khi tạo file, chuẩn hóa PlayerID thành chuỗi số để so sánh:
+
+const normalizedPlayerId = String(player.id).trim();
+
+Sau khi xác nhận hợp lệ mới chuyển sang Number khi tạo JSON.
+
+Mỗi PlayerID chỉ được xuất đúng một lần.
+
+Không được xử lý bằng cách đơn giản nối tất cả player vào mảng.
+
+Sử dụng Map:
+
+const playersById = new Map();
+
+Quy tắc:
+- Nếu một ID chỉ xuất hiện một lần, thêm vào file.
+- Nếu cùng một player được cập nhật nhiều lần trong cùng team, chỉ giữ bản ghi mới nhất theo updatedAt.
+- Nếu cùng một ID xuất hiện ở hai team khác nhau, không được tự chọn ngẫu nhiên.
+- Phải chặn tải file và trả danh sách xung đột cho BTC xử lý.
+
+Ví dụ response khi trùng:
+
+{
+  "success": false,
+  "message": "Không thể xuất file vì có PlayerID bị trùng",
+  "conflicts": [
+    {
+      "playerId": "992836236",
+      "teams": ["NVT", "ABC"]
+    }
+  ]
+}
+
+BTC phải sửa xung đột rồi mới được tải.
+
+==================================================
+6. ĐỒNG BỘ VIỆC XÓA DỮ LIỆU
+==================================================
+
+Nếu người dùng hoặc BTC:
+- Xóa một thành viên.
+- Xóa một team.
+- Chuyển team sang custom khác.
+- Từ chối một team.
+
+Thì lần tải file tiếp theo:
+- Thành viên đã xóa không còn xuất hiện.
+- Team đã xóa không còn xuất hiện.
+- Team chuyển custom chỉ xuất hiện trong custom mới.
+- Team bị từ chối không được xuất nếu quy tắc chỉ xuất team đã duyệt.
+
+Không được giữ dữ liệu cũ trong file xuất.
+
+==================================================
+7. QUY TẮC TẠO TeamRegionList
+==================================================
+
+TeamRegionList không được viết cứng là "SCRIM YN".
+
+Khi xuất một custom:
+- Lấy TeamRegion từ cấu hình mới nhất của custom đó.
+- Lấy Color từ màu mới nhất của custom.
+- Luôn tạo đủ 15 TeamID từ 1 đến 15.
+
+Ví dụ custom hiện tại là HV:
+
+"TeamRegionList": [
+  {
+    "TeamID": 1,
+    "TeamRegion": "HV",
+    "Color": "#000000"
+  },
+  {
+    "TeamID": 2,
+    "TeamRegion": "HV",
+    "Color": "#000000"
+  }
+]
+
+Tiếp tục đến TeamID 15.
+
+Nếu BTC đổi TeamRegion từ "HV" thành "VÒNG LOẠI HV", lần tải tiếp theo phải xuất:
+
+"TeamRegion": "VÒNG LOẠI HV"
+
+Không được còn giá trị cũ.
+
+==================================================
+8. XUẤT TẤT CẢ CUSTOM
+==================================================
+
+Đối với "TẢI JSON TẤT CẢ":
+
+- Đọc dữ liệu mới nhất của tất cả custom.
+- Không nối các file JSON cũ.
+- Gộp player bằng PlayerID.
+- Kiểm tra PlayerID trùng giữa các custom.
+- Nếu trùng, báo custom và team gây xung đột.
+- Không tạo PlayerNameList có nhiều object cùng PlayerID.
+
+Cần xác định rõ cách tạo TeamRegionList khi xuất tất cả.
+
+Nếu định dạng game chỉ hỗ trợ 15 TeamID:
+- Cho BTC chọn một custom trước khi xuất.
+- Hoặc thông báo không thể gộp nhiều custom vào cùng một TeamRegionList 15 slot.
+
+Không tự tạo TeamID trùng nhau giữa nhiều custom trong một file.
+
+==================================================
+9. KIỂM TRA ĐỘ CHÍNH XÁC CỦA ID
+==================================================
+
+ID game có thể lớn.
+
+Trước khi chuyển PlayerID sang Number:
+- Kiểm tra chỉ chứa chữ số.
+- Kiểm tra Number.isSafeInteger(Number(id)).
+- Nếu vượt Number.MAX_SAFE_INTEGER, không được âm thầm làm sai ID.
+- Báo lỗi rõ cho BTC.
+
+Ví dụ:
+
+{
+  "success": false,
+  "message": "PlayerID vượt giới hạn số an toàn của JSON/JavaScript",
+  "playerId": "..."
+}
+
+==================================================
+10. ĐỒNG BỘ GIAO DIỆN QUẢN TRỊ
+==================================================
+
+Sau khi BTC sửa thông tin trong trang quản trị:
+- Chỉ hiện thông báo thành công sau khi API lưu thành công.
+- Sau khi lưu, tải lại dữ liệu từ backend.
+- Không chỉ sửa giao diện trong DOM.
+- Không chỉ sửa biến JavaScript tạm thời.
+- Nút tải file phải dùng dữ liệu vừa được backend xác nhận.
+
+Thêm nút hoặc thông tin:
+
+"DỮ LIỆU ĐÃ ĐỒNG BỘ"
+
+Hiển thị:
+- Thời gian cập nhật gần nhất.
+- Tổng số team.
+- Tổng số player hợp lệ.
+- Số ID đang xung đột.
+
+Trước khi tải có thể hiển thị bản xem trước:
+- PlayerID.
+- PlayerNameOverwrite.
+- PlayerNation.
+- Color.
+
+==================================================
+11. KIỂM TRA FILE KẾT QUẢ
+==================================================
+
+Sau khi sửa, hãy thực hiện test theo luồng này:
+
+TEST 1:
+- Thêm team TEST.
+- Thêm player:
+  TEST.PLAYER - 992836236.
+- Tải JSON.
+- Xác nhận player xuất hiện đúng một lần.
+
+TEST 2:
+- Cập nhật tên thành TEST.PLAYER_NEW.
+- Tải lại JSON.
+- Xác nhận tên mới xuất hiện.
+- Xác nhận TEST.PLAYER cũ không còn.
+
+TEST 3:
+- Xóa player.
+- Tải lại JSON.
+- Xác nhận player không còn trong file.
+
+TEST 4:
+- Đổi tên team TEST thành TEST ESPORT.
+- Tải lại JSON.
+- Xác nhận PlayerNation đổi thành TEST ESPORT.
+
+TEST 5:
+- Đổi TeamRegion custom thành CUSTOM MỚI.
+- Tải lại JSON.
+- Xác nhận cả 15 TeamRegion đều là CUSTOM MỚI.
+
+TEST 6:
+- Tạo hai player trùng ID.
+- Xác nhận hệ thống chặn tải và báo rõ hai team bị trùng.
+
+TEST 7:
+- Reload trang và restart server.
+- Xác nhận dữ liệu vẫn còn và file tải vẫn đúng.
+
+==================================================
+12. YÊU CẦU THỰC HIỆN
+==================================================
+
+Hãy trực tiếp kiểm tra và sửa toàn bộ các file liên quan trong workspace:
+
+- API lưu/cập nhật submission.
+- API quản trị cập nhật team/player.
+- API export.
+- File xử lý storage/database.
+- JavaScript nút tải file.
+- JavaScript phần cập nhật code tên.
+- Validation dữ liệu.
+- Chức năng chống trùng ID.
+
+Không chỉ mô tả cách sửa.
+
+Sau khi sửa:
+1. Chạy npm install nếu cần.
+2. Chạy npm start.
+3. Gọi thử API gửi dữ liệu.
+4. Gọi thử API cập nhật dữ liệu.
+5. Gọi API export.
+6. Đọc file JSON kết quả.
+7. Xác nhận không còn dữ liệu cũ và ID trùng.
+8. Liệt kê những file đã sửa.
+9. Báo rõ nguồn dữ liệu mà chức năng export đang sử dụng.
+10. Giải thích ngắn cách bảo đảm dữ liệu tải về luôn là dữ liệu mới nhất.

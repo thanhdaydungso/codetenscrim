@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Nhập thông tin đội tham gia custom Free Fire.">
+  <title>Thông tin custom</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/"><span class="brand-mark">FF</span><span><b>CỔNG QUẢN LÝ CODE TÊN</b><small>Đăng ký đội hình thi đấu</small></span></a>
+      <nav class="nav-actions"><a class="button secondary" href="/">TRANG CHỦ</a><a class="button primary" href="/admin">BTC ĐĂNG NHẬP</a></nav>
+    </div>
+  </header>
+
+  <main class="container page-main">
+    <div class="section-heading compact">
+      <div><span class="eyebrow">ĐĂNG KÝ ĐỘI HÌNH</span><h1 id="pageTitle">THÔNG TIN CUSTOM</h1></div>
+      <a class="button secondary" href="/">CHỌN CUSTOM KHÁC</a>
+    </div>
+    <div id="notice" class="notice" role="status"></div>
+
+    <div id="formShell" class="form-layout" hidden>
+      <section class="panel">
+        <div class="panel-head"><div><span class="step">01</span><h2>THÔNG TIN ĐỘI</h2></div><span id="customAvailability" class="status open">Còn chỗ</span></div>
+        <form id="teamForm" novalidate>
+          <div class="field">
+            <label for="teamName">TÊN TEAM <span>*</span></label>
+            <input id="teamName" maxlength="40" minlength="2" autocomplete="organization" placeholder="Ví dụ: RAB" required>
+          </div>
+
+          <div class="subheading"><div><span class="step">02</span><h2>DANH SÁCH THÀNH VIÊN</h2></div><small id="memberLimit"></small></div>
+          <div id="memberList" class="member-list"></div>
+          <button id="addMember" class="button secondary wide" type="button">+ THÊM THÀNH VIÊN</button>
+
+          <div class="form-actions">
+            <button id="submitButton" class="button primary" type="submit">GỬI VỀ BTC</button>
+            <button id="updateButton" class="button success" type="button">CẬP NHẬT THÔNG TIN</button>
+            <a class="button secondary" href="/">CHỌN CUSTOM KHÁC</a>
+          </div>
+        </form>
+      </section>
+
+      <aside class="panel quick-panel">
+        <div class="panel-head"><div><span class="step">03</span><h2>NHẬP NHANH TÊN TEAM, ID VÀ TÊN GAME</h2></div></div>
+        <p class="muted">Dòng đầu không có ID sẽ được coi là tên team. Hỗ trợ ID đứng trước/sau tên, có hoặc không có dấu “-”.</p>
+        <textarea id="quickInput" class="quick-input" spellcheck="false" placeholder="RAB&#10;2120337637 Rab.iubich&#10;Rab.iuThienly-6598757580&#10;1897983397.Rab.dm"></textarea>
+        <button id="parseQuick" class="button secondary wide" type="button">ĐỌC Ô NHẬP NHANH</button>
+        <div id="parseErrors" class="parse-errors"></div>
+
+        <div class="edit-box">
+          <label for="editToken">MÃ CHỈNH SỬA ĐÃ NHẬN</label>
+          <div class="inline-field"><input id="editToken" maxlength="48" placeholder="Dán mã để tải lại đội"><button id="loadEdit" class="button secondary" type="button">TẢI</button></div>
+        </div>
+      </aside>
+    </div>
+  </main>
+  <footer><div class="container">Hãy lưu mã chỉnh sửa sau khi gửi thành công. Không chia sẻ mã này cho đội khác.</div></footer>
+  <script src="/custom.js" defer></script>
+</body>
+</html>

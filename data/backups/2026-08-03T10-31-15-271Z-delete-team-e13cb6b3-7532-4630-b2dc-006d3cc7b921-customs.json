@@ -1,0 +1,38 @@
+[
+  {
+    "id": "HV",
+    "name": "HV",
+    "teamRegion": "HV",
+    "color": "#C62A67",
+    "locked": false,
+    "createdAt": "2026-08-03T00:00:00.000Z",
+    "updatedAt": "2026-08-03T09:48:34.903Z"
+  },
+  {
+    "id": "MP",
+    "name": "MP",
+    "teamRegion": "MP",
+    "color": "#30F708",
+    "locked": false,
+    "createdAt": "2026-08-03T00:00:00.000Z",
+    "updatedAt": "2026-08-03T10:30:50.865Z"
+  },
+  {
+    "id": "XN",
+    "name": "XN",
+    "teamRegion": "XN",
+    "color": "#D1493F",
+    "locked": false,
+    "createdAt": "2026-08-03T00:00:00.000Z",
+    "updatedAt": "2026-08-03T09:27:48.265Z"
+  },
+  {
+    "id": "CUSTOM-YN",
+    "name": "CUSTOM YN",
+    "teamRegion": "CUSTOM YN",
+    "color": "#000000",
+    "locked": false,
+    "createdAt": "2026-08-03T10:28:09.618Z",
+    "updatedAt": "2026-08-03T10:28:09.618Z"
+  }
+]

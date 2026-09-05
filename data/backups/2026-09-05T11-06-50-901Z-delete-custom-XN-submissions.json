@@ -1,0 +1,66 @@
+[
+  {
+    "id": "b599a077-fe40-471f-b109-b9735c7166ec",
+    "editToken": "8ce432f50b11389a0fd951c85c358f530ec1df653793ba41",
+    "teamName": "IKE",
+    "customId": "YN",
+    "contact": "",
+    "note": "",
+    "color": "#17F207",
+    "players": [
+      {
+        "playerId": "4425029936",
+        "playerName": "IKE.TN05"
+      },
+      {
+        "playerId": "2218516512",
+        "playerName": "IKE.QT08"
+      },
+      {
+        "playerId": "14282366508",
+        "playerName": "IKE.TT12"
+      },
+      {
+        "playerId": "7157188033",
+        "playerName": "IKE.TRIEU36"
+      }
+    ],
+    "teamSlot": 1,
+    "status": "approved",
+    "createdAt": "2026-08-03T10:35:52.890Z",
+    "updatedAt": "2026-08-03T10:37:09.034Z",
+    "playerNation": "IKE"
+  },
+  {
+    "id": "2147e13e-27c3-4c11-bff2-06ca1c70f87d",
+    "editToken": "7c41f3ba4f9acc43ba4a01eaa10bfe8b0bbff695b1056349",
+    "teamName": "CPP",
+    "customId": "YN",
+    "contact": "",
+    "note": "",
+    "color": "#00FBFF",
+    "players": [
+      {
+        "playerId": "9379401418",
+        "playerName": "CPP.MNHAT"
+      },
+      {
+        "playerId": "5480631314",
+        "playerName": "CPP.MPHAT"
+      },
+      {
+        "playerId": "9353703717",
+        "playerName": "CPP.MHUY"
+      },
+      {
+        "playerId": "1329918013",
+        "playerName": "CPP.HPHUONG"
+      }
+    ],
+    "teamSlot": 2,
+    "status": "approved",
+    "createdAt": "2026-08-03T10:37:16.747Z",
+    "updatedAt": "2026-08-03T10:39:46.874Z",
+    "playerNation": "CPP"
+  }
+]

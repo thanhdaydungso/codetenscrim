@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Cổng đăng ký code tên cho giải đấu Free Fire.">
+  <title>Cổng quản lý code tên</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/" aria-label="Trang chủ">
+        <span class="brand-mark">FF</span>
+        <span><b id="siteName">CỔNG QUẢN LÝ CODE TÊN</b><small>Hệ thống đăng ký đội hình giải đấu Free Fire</small></span>
+      </a>
+      <nav class="nav-actions" aria-label="Điều hướng chính">
+        <a class="button secondary active" href="/">TRANG CHỦ</a>
+        <a class="button primary" href="/admin">BTC ĐĂNG NHẬP</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero container">
+      <h1>CỔNG QUẢN LÝ<br><span>CODE TÊN</span></h1>
+      <p>Chọn đúng custom để đăng ký đội hình. Hệ thống kiểm tra ID, bảo vệ mã chỉnh sửa và chuyển dữ liệu trực tiếp tới ban tổ chức.</p>
+      <div class="hero-stats" aria-label="Thống kê">
+        <div><b id="customCount">—</b><span>Custom</span></div>
+        <div><b id="openCount">—</b><span>Đang mở</span></div>
+        <div><b>15</b><span>Đội / custom</span></div>
+      </div>
+    </section>
+
+    <section class="container section-space">
+      <div class="section-heading">
+        <div><span class="eyebrow"></span><h2>CHỌN CUSTOM</h2></div>
+      </div>
+      <div id="notice" class="notice" role="status"></div>
+      <div id="customList" class="custom-grid" aria-live="polite">
+        <div class="loading-card">Đang tải danh sách custom…</div>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="container">Dữ liệu chỉ được sử dụng cho công tác tổ chức giải đấu.</div></footer>
+  <script src="/app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+[
+  {
+    "id": "e13cb6b3-7532-4630-b2dc-006d3cc7b921",
+    "editToken": "23b3f425994e7e71e2d96d022daf3a86a0eb6b41a3b6ef29",
+    "teamName": "NGD",
+    "customId": "XN",
+    "contact": "",
+    "note": "",
+    "color": "",
+    "players": [
+      {
+        "playerId": "2408501959",
+        "playerName": "NGD.emduy"
+      },
+      {
+        "playerId": "2168215046",
+        "playerName": "NGD.DRAGON"
+      },
+      {
+        "playerId": "2969332902",
+        "playerName": "NGD.HDang"
+      },
+      {
+        "playerId": "380550189",
+        "playerName": "NGD.NamLe"
+      }
+    ],
+    "teamSlot": 2,
+    "status": "approved",
+    "createdAt": "2026-08-03T10:11:06.189Z",
+    "updatedAt": "2026-08-03T10:11:06.189Z"
+  }
+]

@@ -1,0 +1,65 @@
+[
+  {
+    "id": "1ade8d77-b589-4a2f-840a-4848002b11d3",
+    "editToken": "822727e9ec3fb5483373eadb237caabebb9369edfa9f9baa",
+    "teamName": "EWC",
+    "customId": "HV",
+    "contact": "",
+    "note": "",
+    "color": "#000000",
+    "players": [
+      {
+        "playerId": "4138025017",
+        "playerName": "GB Kiwi"
+      },
+      {
+        "playerId": "364928859",
+        "playerName": "MiuJet✿"
+      },
+      {
+        "playerId": "5412770423",
+        "playerName": "GB.ᐟT.Kỳ"
+      },
+      {
+        "playerId": "9774319235",
+        "playerName": "ฉันรักคุณ §§"
+      }
+    ],
+    "teamSlot": 1,
+    "status": "approved",
+    "createdAt": "2026-08-03T09:29:39.041Z",
+    "updatedAt": "2026-08-03T10:04:12.614Z",
+    "playerNation": "EWC"
+  },
+  {
+    "id": "dee96332-ec27-4e01-852f-20a0c3ff1aac",
+    "editToken": "153ebbe128e665ad1128e62cd79d7199d7d15e0ddddb3f57",
+    "teamName": "WDE",
+    "customId": "XN",
+    "contact": "",
+    "note": "",
+    "color": "",
+    "players": [
+      {
+        "playerId": "2283189452",
+        "playerName": "WDE.Foxxz"
+      },
+      {
+        "playerId": "3252974311",
+        "playerName": "WDE.3107"
+      },
+      {
+        "playerId": "6618064109",
+        "playerName": "WDE.LOUIS"
+      },
+      {
+        "playerId": "1776721880",
+        "playerName": "WDE.Danger"
+      }
+    ],
+    "teamSlot": 1,
+    "status": "pending",
+    "createdAt": "2026-08-03T10:08:11.228Z",
+    "updatedAt": "2026-08-03T10:08:11.228Z"
+  }
+]

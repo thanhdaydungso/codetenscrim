@@ -1,0 +1,14 @@
+{
+  "name": "team-code-submission-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Web nhận tên nhân vật + ID game và xuất PlayerNameOverwrite.json",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node tests/export-flow.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

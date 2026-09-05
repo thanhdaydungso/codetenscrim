@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bảng điều khiển BTC</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/"><span class="brand-mark">FF</span><span><b>CỔNG QUẢN LÝ CODE TÊN</b><small>Ban tổ chức giải đấu</small></span></a>
+      <nav class="nav-actions"><a class="button secondary" href="/">TRANG CHỦ</a><button id="logoutButton" class="button danger" type="button" hidden>ĐĂNG XUẤT</button></nav>
+    </div>
+  </header>
+
+  <main class="container page-main">
+    <section id="loginView" class="login-wrap">
+      <div class="panel login-panel">
+        <span class="eyebrow">KHU VỰC BẢO MẬT</span>
+        <h1>BTC ĐĂNG NHẬP</h1>
+        <p class="muted">Mật khẩu chỉ được gửi tới backend để tạo phiên đăng nhập bảo mật.</p>
+        <div id="loginNotice" class="notice" role="status"></div>
+        <form id="loginForm">
+          <div class="field"><label for="adminPassword">MẬT KHẨU QUẢN TRỊ</label><div class="password-field"><input id="adminPassword" type="password" autocomplete="current-password" required><button id="togglePassword" class="icon-button" type="button" aria-label="Hiện mật khẩu">◉</button></div></div>
+          <button id="loginButton" class="button primary wide" type="submit">ĐĂNG NHẬP</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="dashboard" hidden>
+      <div class="section-heading compact"><div><span class="eyebrow">BAN TỔ CHỨC</span><h1>BẢNG ĐIỀU KHIỂN CUSTOM</h1></div><button id="refreshButton" class="button secondary">LÀM MỚI</button></div>
+      <div id="notice" class="notice" role="status"></div>
+
+      <div id="stats" class="stats-grid">
+        <div class="stat"><b>0</b><span>Custom</span></div><div class="stat"><b>0</b><span>Tổng đội</span></div><div class="stat"><b>0</b><span>Đã lưu</span></div><div class="stat"><b>0</b><span>Người chơi</span></div>
+      </div>
+
+      <div class="admin-layout">
+        <aside class="panel custom-sidebar">
+          <div class="panel-head"><div><span class="step">01</span><h2>DANH SÁCH CUSTOM</h2></div></div>
+          <form id="addCustomForm" class="add-custom-form">
+            <div class="field"><label for="newCustom">TÊN / TEAM REGION</label><input id="newCustom" maxlength="30" placeholder="Ví dụ: HV" required></div>
+            <button class="button primary wide" type="submit">+ THÊM CUSTOM</button>
+          </form>
+          <div id="customAdminList" class="custom-admin-list"></div>
+        </aside>
+
+        <section class="admin-content">
+          <div class="panel">
+            <div class="panel-head responsive-head">
+              <div><span class="step">02</span><h2 id="teamHeading">TEAM TRONG CUSTOM</h2></div>
+              <div class="actions">
+                <button id="exportCustom" class="button success" disabled>TẢI JSON CUSTOM NÀY</button>
+                <button id="exportAll" class="button secondary">TẢI JSON TẤT CẢ CUSTOM</button>
+                <button id="clearCustom" class="button danger" disabled>XÓA DỮ LIỆU CUSTOM NÀY</button>
+              </div>
+            </div>
+            <div id="syncPanel" class="sync-panel" hidden>
+              <div class="sync-title"><div><span class="sync-dot"></span><b>DỮ LIỆU ĐÃ ĐỒNG BỘ</b></div><small id="syncTime">—</small></div>
+              <div id="syncStats" class="sync-stats"></div>
+              <div id="syncIssues" class="sync-issues"></div>
+              <div class="export-preview-wrap">
+                <div class="preview-title">BẢN XEM TRƯỚC PLAYERNAMEOVERWRITE</div>
+                <div id="exportPreview" class="export-preview"></div>
+              </div>
+            </div>
+            <div id="teamList" class="team-admin-list"><div class="empty-state">Chọn một custom để xem danh sách team.</div></div>
+          </div>
+
+          <div class="panel import-panel">
+            <div class="panel-head"><div><span class="step">03</span><h2>NẠP NHIỀU TEAM</h2></div></div>
+            <div class="panel-body">
+              <p class="muted">Mỗi dòng là một team: tên team đứng trước ID đầu tiên, sau mỗi ID là tên ingame.</p>
+              <textarea id="bulkInput" spellcheck="false" placeholder="PTE 3975285885 FS Snaw 3200451115 TG vanbinn&#10;AWE 10253674281 chuoichien 1004978813 krime"></textarea>
+              <div class="actions"><button id="parseBulk" class="button secondary">ĐỌC DANH SÁCH GIẢI</button><button id="importBulk" class="button primary" disabled>NẠP NHIỀU TEAM</button></div>
+              <div id="bulkErrors" class="parse-errors"></div>
+              <div id="bulkPreview" class="bulk-preview"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+  <script src="/admin.js" defer></script>
+</body>
+</html>
