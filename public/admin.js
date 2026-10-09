@@ -202,7 +202,7 @@ $('#addCustomForm').addEventListener('submit', async event => {
   event.preventDefault();
   const name = $('#newCustom').value.trim();
   try {
-    const result = await api('/api/admin/customs', { method: 'POST', body: JSON.stringify({ name, teamRegion: name }) });
+    const result = await api('/api/admin/customs', { method: 'POST', body: JSON.stringify({ name }) });
     $('#newCustom').value = '';
     selectedId = result.data.id;
     await loadCustoms();

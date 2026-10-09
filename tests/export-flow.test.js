@@ -129,6 +129,9 @@ async function run() {
   assert(loggedOut.status === 302, 'Phi?n ?? ??ng xu?t v?n truy c?p ???c logo.');
   const ynExport = await exportCustom('YN', cookie);
   assert(ynExport.response.ok && ynExport.response.headers.get('content-disposition').includes('PlayerNameOverwrite.json'), 'YN filename must be PlayerNameOverwrite.json');
+  assert(ynExport.body.TeamRegionList.every(region => region.TeamRegion === 'SCRIM YN'), 'Default YN TeamRegion must be SCRIM YN');
+  const addedCustom = await admin('/api/admin/customs', cookie, { method: 'POST', body: JSON.stringify({ name: 'NEW' }) });
+  assert(addedCustom.body.data.teamRegion === 'SCRIM NEW', 'New custom must default to SCRIM plus name');
   const defaultCustoms = await request('/api/customs');
   assert(defaultCustoms.body.data.some(custom => custom.id === 'YN'), 'Custom YN chưa được tạo mặc định.');
 
@@ -199,11 +202,14 @@ async function run() {
   const legacyCustoms = JSON.parse(fs.readFileSync(customsFile, 'utf8'));
   const yn = legacyCustoms.find(custom => custom.id === 'YN');
   yn.color = '#E08B2D';
+  yn.teamRegion = 'YN';
+  delete yn.scrimRegionMigrated;
   delete yn.whiteDefaultMigrated;
   fs.writeFileSync(customsFile, JSON.stringify(legacyCustoms), 'utf8');
   await startServer();
   cookie = await login();
   const restartedCustoms = await request('/api/customs');
+  assert(restartedCustoms.body.data.find(custom => custom.id === 'YN').teamRegion === 'SCRIM YN', 'Old YN TeamRegion was not migrated');
   assert(restartedCustoms.body.data.find(custom => custom.id === 'YN').color === '#FFFFFF', 'Old YN default was not migrated to white');
   assert(restartedCustoms.body.data.find(custom => custom.id === 'HV').color === '#123456', 'Admin-selected color was overwritten');
   output = await exportCustom('HV', cookie);

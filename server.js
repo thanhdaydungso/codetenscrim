@@ -57,7 +57,7 @@ function initialCustoms() {
   return ['MP', 'XN', 'HV', 'YN'].map((id, index) => ({
     id,
     name: id,
-    teamRegion: id,
+    teamRegion: 'SCRIM ' + id,
     color: '#FFFFFF',
     locked: false,
     createdAt: now,
@@ -98,6 +98,11 @@ async function ensureStorage() {
   const missingIds = [...new Set(migratedTeams.map(team => team.customId))].filter(id => id && !storedCustoms.some(custom => custom.id === id));
   const legacyColors = { MP: '#8B3FD1', XN: '#D1493F', HV: '#C62A67', YN: '#E08B2D' };
   const updatedCustoms = storedCustoms.map(custom => {
+    if (!custom.scrimRegionMigrated) {
+      changed = true;
+      const oldDefault = !custom.teamRegion || custom.teamRegion === custom.id || custom.teamRegion === custom.name;
+      custom = { ...custom, teamRegion: oldDefault ? cleanText('SCRIM ' + (custom.name || custom.id), 30) : custom.teamRegion, scrimRegionMigrated: true };
+    }
     if (custom.whiteDefaultMigrated) return custom;
     changed = true;
     const color = String(custom.color || '').toUpperCase();
@@ -107,7 +112,7 @@ async function ensureStorage() {
   const migratedCustoms = [...updatedCustoms, ...missingIds.map(id => {
     changed = true;
     const now = new Date().toISOString();
-    return { id, name: id, teamRegion: id, color: cfg.defaultColor, locked: false, createdAt: now, updatedAt: now };
+    return { id, name: id, teamRegion: 'SCRIM ' + id, color: cfg.defaultColor, locked: false, createdAt: now, updatedAt: now };
   })];
   if (changed) {
     await backupFiles('schema-migration');
@@ -384,7 +389,7 @@ function prepareExport(custom, teams, cfg) {
       PlayerNameList,
       TeamRegionList: Array.from({ length: 15 }, (_, index) => ({
         TeamID: index + 1,
-        TeamRegion: cleanText(custom.teamRegion || custom.name, 30),
+        TeamRegion: cleanText(custom.teamRegion || ('SCRIM ' + (custom.name || custom.id)), 30),
         Color: normalizeColor(custom.color, cfg.defaultColor || '#FFFFFF')
       }))
     },
@@ -591,7 +596,7 @@ async function handleAdminApi(req, res, url, cfg) {
       const custom = {
         id,
         name,
-        teamRegion: cleanText(body.teamRegion || name, 30),
+        teamRegion: cleanText(body.teamRegion || ('SCRIM ' + name), 30),
         color: normalizeColor(body.color, cfg.defaultColor),
         locked: Boolean(body.locked),
         createdAt: now,
