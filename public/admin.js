@@ -34,12 +34,14 @@ function showLogin() {
   $('#loginView').hidden = false;
   $('#dashboard').hidden = true;
   $('#logoutButton').hidden = true;
+  $('#adminCodeMenu').hidden = true;
 }
 
 function showDashboard() {
   $('#loginView').hidden = true;
   $('#dashboard').hidden = false;
   $('#logoutButton').hidden = false;
+  $('#adminCodeMenu').hidden = false;
 }
 
 function formatDate(value) {

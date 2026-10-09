@@ -106,7 +106,7 @@ async function run() {
     assert(response.headers.get('cache-control') === 'no-store', 'Logo kh?ng ???c cache: ' + route);
     const content = await response.text();
     assert(content.length > 0, 'File logo r?ng: ' + route);
-    if (route === '/logo/') assert(content.includes('B?ng qu?n tr? code t?n'), 'Thi?u li?n k?t v? admin.');
+    if (route === '/logo/') assert(content.includes('class="code-menu"') && content.includes('href="/admin"'), 'Missing admin menu link.');
   }
   const privateFile = await fetch(baseUrl + '/private/logo/script.js', { redirect: 'manual' });
   assert(privateFile.status === 404, 'File ri?ng t? b? l? qua static.');

@@ -9,8 +9,8 @@
 <body>
   <header class="site-header">
     <div class="container header-inner">
-      <a class="brand" href="/"><span class="brand-mark">FF</span><span><b>CỔNG QUẢN LÝ CODE TÊN</b><small>Ban tổ chức giải đấu</small></span></a>
-      <nav class="nav-actions"><a class="button secondary" href="/">TRANG CHỦ</a><button id="logoutButton" class="button danger" type="button" hidden>ĐĂNG XUẤT</button></nav>
+      <a class="brand" href="/"><span class="brand-mark">FF</span><span><b>CỔNG QUẢN LÝ CODE</b><small>Ban tổ chức giải đấu</small></span></a>
+      <div class="nav-actions"><div id="adminCodeMenu" hidden><details class="code-menu"><summary aria-label="Mở menu chức năng"><span class="hamburger" aria-hidden="true"><i></i><i></i><i></i></span></summary><nav class="code-menu-items" aria-label="Chức năng"><a href="/admin">Code tên</a><a href="/logo/">Code logo</a></nav></details></div><a class="button secondary" href="/">TRANG CHỦ</a><button id="logoutButton" class="button danger" type="button" hidden>ĐĂNG XUẤT</button></div>
     </div>
   </header>
 
@@ -29,7 +29,6 @@
     </section>
 
     <section id="dashboard" hidden>
-      <p><a class="button primary" href="/logo/">CODE LOGO ? T?O &amp; XU?T LOGO</a></p>
       <div class="section-heading compact"><div><span class="eyebrow">BAN TỔ CHỨC</span><h1>BẢNG ĐIỀU KHIỂN CUSTOM</h1></div><button id="refreshButton" class="button secondary">LÀM MỚI</button></div>
       <div id="notice" class="notice" role="status"></div>
 
