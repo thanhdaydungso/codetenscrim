@@ -68,3 +68,7 @@
   .logo-page .logo-main > .panel:last-child { grid-column: 1; grid-row: 3; }
   .logo-page .logo-main > .panel { height: auto; min-height: 0; }
 }
+.logo-page #editor { margin:12px 0; padding:10px; border:1px solid #687080; border-radius:8px; min-width:0; }
+.logo-page #editor input { width:100%; }
+.logo-page #editor input[type=color] { height:34px; padding:2px; }
+.logo-page #preview { width:140px; height:140px; background:repeating-conic-gradient(#ddd 0% 25%,#fff 0% 50%) 0 / 16px 16px; }

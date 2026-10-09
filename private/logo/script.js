@@ -174,6 +174,7 @@ function render() {
   if (!logos.length) { const option = document.createElement('option'); option.textContent = 'Chưa có logo'; option.value = ''; $('previewSelect').append(option); }
   else $('previewSelect').value = selected !== '' && logos[Number(selected)] ? selected : '0';
   preview();
+  syncEditor();
   renderManualStudio();
 }
 function drawImageFit(ctx, img, x, y, width, height, cover) {
@@ -196,8 +197,11 @@ function draw(canvas, logo) {
   ctx.beginPath();
   ctx.arc(center, center, radius, 0, Math.PI * 2);
   ctx.clip();
-  drawImageFit(ctx, logo.img, borderWidth / 2, borderWidth / 2,
-    SIZE - borderWidth, SIZE - borderWidth, true);
+  const edited = !logo.isFallback && (logo.cutout || logo.background || logo.bgColor);
+  if (!logo.isFallback && logo.background) drawImageFit(ctx, logo.background.img, 25, 25, 950, 950, true);
+  else if (!logo.isFallback && logo.bgColor) { ctx.fillStyle = logo.bgColor; ctx.fillRect(25,25,950,950); }
+  const side = edited ? 950 * (logo.scale || .8) : 950;
+  drawImageFit(ctx, logo.cutout || logo.img, (SIZE-side)/2, (SIZE-side)/2, side, side, !edited);
   ctx.restore();
   ctx.beginPath();
   ctx.arc(center, center, radius, 0, Math.PI * 2);
@@ -358,7 +362,7 @@ async function copyTableImage() {
 
 $('replace').onclick=()=>{if(busy)return;const parsed=parseRoster($('teamInput').value);if(!parsed.length){tell('Hãy nhập ít nhất một team.');return;}teams=parsed;manualAssignments=[];render();tell(`Đã nhập ${teams.length} team.`);};
 $('append').onclick=()=>{if(busy)return;const parsed=parseRoster($('teamInput').value);teams.push(...parsed);render();tell(`Đã thêm ${parsed.length} team.`);};
-$('reset').onclick=()=>{if(busy||uploading)return;logos.forEach(l=>URL.revokeObjectURL(l.url));teams=[];logos=[];manualAssignments=[];$('teamInput').value='';render();tell('Đã xóa bảng và logo.');};
+$('reset').onclick=()=>{if(busy||uploading)return;logos.forEach(l=>{URL.revokeObjectURL(l.url);if(l.background)URL.revokeObjectURL(l.background.url);});teams=[];logos=[];manualAssignments=[];$('teamInput').value='';render();tell('Đã xóa bảng và logo.');};
 $('files').onchange=e=>upload(Array.from(e.target.files));
 ['dragenter','dragover'].forEach(event=>$('dropZone').addEventListener(event,e=>{e.preventDefault();$('dropZone').classList.add('over');}));
 ['dragleave','drop'].forEach(event=>$('dropZone').addEventListener(event,e=>{e.preventDefault();$('dropZone').classList.remove('over');if(event==='drop')upload(Array.from(e.dataTransfer.files));}));
@@ -368,6 +372,77 @@ $('download').onclick=download;$('copyTable').onclick=copyTableImage;render();
 
 
 
+
+function removeEdgeBackground(data, width, height, color, tolerance) {
+  const seen = new Uint8Array(width*height), queue = new Uint32Array(width*height);
+  let head=0, tail=0;
+  function add(p) {
+    if(seen[p]) return; seen[p]=1;
+    const i=p*4, distance=Math.max(...color.map((c,k)=>Math.abs(data[i+k]-c)));
+    if(!data[i+3] || distance<=tolerance) queue[tail++]=p;
+  }
+  for(let x=0;x<width;x++){add(x);add((height-1)*width+x);}
+  for(let y=0;y<height;y++){add(y*width);add(y*width+width-1);}
+  while(head<tail){
+    const p=queue[head++],x=p%width; data[p*4+3]=0;
+    if(x) add(p-1); if(x<width-1) add(p+1);
+    if(p>=width) add(p-width); if(p<width*(height-1)) add(p+width);
+  }
+  return data;
+}
+function selectedLogo(){return logos[Number($('previewSelect').value)];}
+function syncEditor(){
+  const logo=selectedLogo(), editor=$('editor'); if(!editor)return;
+  editor.disabled=!logo||busy||uploading;
+  if(!logo)return;
+  $('scaleLogo').value=Math.round((logo.scale||.8)*100);
+  $('bgColor').value=logo.bgColor||'#ffffff';
+  if(!logo.keyColor){
+    const c=document.createElement('canvas');c.width=c.height=1;
+    const ctx=c.getContext('2d');ctx.drawImage(logo.img,0,0);
+    logo.keyColor='#'+Array.from(ctx.getImageData(0,0,1,1).data.slice(0,3),n=>n.toString(16).padStart(2,'0')).join('');
+  }
+  $('keyColor').value=logo.keyColor;
+}
+function refreshLogo(logo){delete logo.avatarPreview;render();}
+$('previewSelect').onchange=()=>{preview();syncEditor();};
+$('keyColor').oninput=()=>{const l=selectedLogo();if(l)l.keyColor=$('keyColor').value;};
+$('cut').onclick=()=>{
+  const l=selectedLogo();if(!l||busy||uploading)return;
+  try {
+    const c=document.createElement('canvas'), factor=Math.min(1,1600/Math.max(l.img.naturalWidth,l.img.naturalHeight));
+    c.width=Math.max(1,Math.round(l.img.naturalWidth*factor));c.height=Math.max(1,Math.round(l.img.naturalHeight*factor));
+    const ctx=c.getContext('2d');ctx.drawImage(l.img,0,0,c.width,c.height);
+    const pixels=ctx.getImageData(0,0,c.width,c.height),hex=$('keyColor').value;
+    removeEdgeBackground(pixels.data,c.width,c.height,[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)),Number($('tolerance').value));
+    ctx.putImageData(pixels,0,0);l.cutout=c;refreshLogo(l);tell('Đã tách nền. Có thể chỉnh màu và độ nhạy rồi tách lại từ ảnh gốc.');
+  }catch(e){tell('Không tách được nền: '+e.message);}
+};
+$('restore').onclick=()=>{const l=selectedLogo();if(l){delete l.cutout;refreshLogo(l);}};
+$('bgFile').onchange=async e=>{
+  const l=selectedLogo(),file=e.target.files[0];if(!l||!file||busy||uploading)return;
+  uploading=true;render();let url;
+  try{
+    if(!/^image\/(png|jpeg|webp)$/.test(file.type))throw Error('Chọn PNG, JPG hoặc WebP.');
+    url=URL.createObjectURL(file);const img=new Image();img.src=url;await img.decode();
+    if(l.background)URL.revokeObjectURL(l.background.url);
+    l.background={img,url};delete l.bgColor;delete l.avatarPreview;tell('Đã thêm background.');
+  }catch(error){if(url)URL.revokeObjectURL(url);tell(error.message);}
+  finally{uploading=false;e.target.value='';render();}
+};
+$('colorBg').onclick=()=>{const l=selectedLogo();if(!l)return;if(l.background)URL.revokeObjectURL(l.background.url);delete l.background;l.bgColor=$('bgColor').value;refreshLogo(l);};
+$('clearBg').onclick=()=>{const l=selectedLogo();if(!l)return;if(l.background)URL.revokeObjectURL(l.background.url);delete l.background;delete l.bgColor;refreshLogo(l);};
+$('scaleLogo').oninput=()=>{const l=selectedLogo();if(l){l.scale=Number($('scaleLogo').value)/100;refreshLogo(l);}};
+$('savePng').onclick=()=>{
+  const l=selectedLogo();if(!l||busy||uploading)return;
+  $('preview').toBlob(blob=>{
+    if(!blob){tell('Không tạo được PNG.');return;}
+    const url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download=l.name+'-edited.png';document.body.append(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+  },'image/png');
+};
+syncEditor();
 async function loadPlaynameCustoms() {
   try {
     const response = await fetch('/api/admin/customs', { credentials: 'same-origin', cache: 'no-store' });
