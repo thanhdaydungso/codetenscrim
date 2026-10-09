@@ -406,6 +406,7 @@ function syncEditor(){
 }
 function refreshLogo(logo){delete logo.avatarPreview;render();}
 $('previewSelect').onchange=()=>{preview();syncEditor();};
+if ($('editor')) {
 $('keyColor').oninput=()=>{const l=selectedLogo();if(l)l.keyColor=$('keyColor').value;};
 $('cut').onclick=()=>{
   const l=selectedLogo();if(!l||busy||uploading)return;
@@ -443,6 +444,7 @@ $('savePng').onclick=()=>{
   },'image/png');
 };
 syncEditor();
+}
 async function loadPlaynameCustoms() {
   try {
     const response = await fetch('/api/admin/customs', { credentials: 'same-origin', cache: 'no-store' });
