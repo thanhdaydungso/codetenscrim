@@ -101,7 +101,7 @@ async function run() {
   baseUrl = `http://127.0.0.1:${port}`;
   await startServer();
   let cookie = await login();
-  const logoPaths = ['/logo', '/admin/logo', '/logo/', '/logo/index.html', '/logo/style.css', '/logo/script.js', '/logo/avatars_b64.js'];
+  const logoPaths = ['/logo', '/admin/logo', '/logo/', '/logo/index.html', '/logo/style.css', '/logo/script.js', '/logo/avatars_b64.js', '/logo/logo-bundle.js'];
   for (const route of logoPaths) {
     for (const headers of [{}, { Cookie: 'btc_session=invalid' }]) {
       const response = await fetch(baseUrl + route, { headers, redirect: 'manual' });

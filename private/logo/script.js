@@ -124,7 +124,7 @@ function render() {
     logoCell.append(logoImage);
     const avatarCell = document.createElement('td');
     const avatarImage = document.createElement('img');
-    avatarImage.src = 'avatars/' + avatar.file + '.png';
+    avatarImage.src = 'data:image/png;base64,' + AVATAR_B64[avatar.file];
     avatarImage.alt = avatar.name;
     avatarImage.className = 'character-avatar';
     avatarCell.append(avatarImage);
@@ -154,7 +154,8 @@ function render() {
   $('empty').hidden = teams.length > 0;
   const count = matched.filter(p => !p.logo.isFallback).length;
   $('stats').textContent = `${teams.length} team · ${logos.length} logo · ${count} đã ghép`;
-  $('download').disabled = !teams.length || busy || uploading;
+  $('download').disabled = !teams.length || !$('playnameCustom').value || busy || uploading;
+  $('playnameCustom').disabled = busy || uploading;
   $('copyTable').disabled = !teams.length || busy || uploading;
   ['replace','append','reset','files'].forEach(id => $(id).disabled = busy || (id === 'files' && uploading));
 
@@ -251,17 +252,27 @@ function makeZip(entries) {
 }
 async function download() {
   const matched=pairs(); if(!matched.length || busy || uploading)return;
-  if(matched.length>65535){tell('Tối đa 65535 ảnh mỗi ZIP. Hãy chia danh sách thành nhóm nhỏ hơn.');return;}
+  if(matched.length * 3 + 1 > 65535){tell('Tối đa 65535 ảnh mỗi ZIP. Hãy chia danh sách thành nhóm nhỏ hơn.');return;}
   busy=true;render();const entries=[],canvas=document.createElement('canvas');canvas.width=canvas.height=SIZE;
   try {
+    const customId = $('playnameCustom').value;
+    if (!customId) throw new Error('Chọn custom playname trước khi xuất.');
+    const response = await fetch('/api/admin/export/' + encodeURIComponent(customId), { credentials: 'same-origin', cache: 'no-store' });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Không lấy được playname.');
+    }
+    const disposition = response.headers.get('content-disposition') || '';
+    const encodedName = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+    const playname = { name: encodedName ? decodeURIComponent(encodedName[1]) : 'SCRIM ' + customId + '.json', data: new Uint8Array(await response.arrayBuffer()) };
     for(let i=0;i<matched.length;i++) {
       const {logo,index}=matched[i];tell(`Đang tạo ảnh ${i+1}/${matched.length}…`);draw(canvas,logo);
       const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw new Error('Không tạo được ảnh PNG.');
       const name = exportName(index);
       entries.push({name,data:new Uint8Array(await blob.arrayBuffer())});
     }
-    const url=URL.createObjectURL(makeZip(entries)),link=document.createElement('a');link.href=url;link.download='team-logos-1000x1000.zip';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
-    tell(`Đã tạo ZIP gồm ${entries.length} ảnh PNG 1000×1000.`);
+    const url=URL.createObjectURL(makeZip(buildLogoBundle(entries, playname))),link=document.createElement('a');link.href=url;link.download='SCRIM ' + customId + ' - logo.zip';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+    tell('ZIP gồm 3 thư mục logo và ' + playname.name + '.');
   }catch(error){tell(`Xuất thất bại: ${error.message}`);}finally{busy=false;render();}
 }
 
@@ -356,3 +367,17 @@ $('previewSelect').onchange=preview;
 $('download').onclick=download;$('copyTable').onclick=copyTableImage;render();
 
 
+
+async function loadPlaynameCustoms() {
+  try {
+    const response = await fetch('/api/admin/customs', { credentials: 'same-origin', cache: 'no-store' });
+    const result = await response.json();
+    if (!response.ok || !result.success) throw new Error(result.message || 'Không tải được custom.');
+    const select = $('playnameCustom');
+    select.replaceChildren(new Option('Chọn custom playname', ''));
+    for (const custom of result.data) select.add(new Option(custom.name + ' (' + custom.playerCount + ' player)', custom.id));
+    select.onchange = render;
+    render();
+  } catch (error) { tell(error.message); }
+}
+loadPlaynameCustoms();

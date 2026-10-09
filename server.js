@@ -833,6 +833,7 @@ function serveLogo(req, res, url) {
     '/logo/index.html': 'index.html',
     '/logo/style.css': 'style.css',
     '/logo/script.js': 'script.js',
+    '/logo/logo-bundle.js': 'logo-bundle.js',
     '/logo/avatars_b64.js': 'avatars_b64.js'
   };
   const file = files[url.pathname];
