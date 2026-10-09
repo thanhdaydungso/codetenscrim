@@ -340,7 +340,7 @@ async function download(path) {
   }
   const disposition = response.headers.get('content-disposition') || '';
   const encodedName = disposition.match(/filename\*=UTF-8''([^;]+)/i);
-  const filename = encodedName ? decodeURIComponent(encodedName[1]) : 'SCRIM.json';
+  const filename = encodedName ? decodeURIComponent(encodedName[1]) : 'PlayerNameOverwrite.json';
   const blob = await response.blob();
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a'); link.href = url; link.download = filename; link.click();

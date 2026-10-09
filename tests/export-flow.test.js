@@ -128,7 +128,7 @@ async function run() {
   const loggedOut = await fetch(baseUrl + '/logo/script.js', { headers: { Cookie: logoCookie }, redirect: 'manual' });
   assert(loggedOut.status === 302, 'Phi?n ?? ??ng xu?t v?n truy c?p ???c logo.');
   const ynExport = await exportCustom('YN', cookie);
-  assert(ynExport.response.ok && ynExport.response.headers.get('content-disposition').includes('SCRIM%20YN.json'), 'YN filename must be SCRIM YN.json');
+  assert(ynExport.response.ok && ynExport.response.headers.get('content-disposition').includes('PlayerNameOverwrite.json'), 'YN filename must be PlayerNameOverwrite.json');
   const defaultCustoms = await request('/api/customs');
   assert(defaultCustoms.body.data.some(custom => custom.id === 'YN'), 'Custom YN chưa được tạo mặc định.');
 
@@ -144,7 +144,7 @@ async function run() {
   assert(output.response.ok, 'Export failed.');
   assert(output.body.PlayerNameList.every(player => player.Color === '#FFFFFF'), 'Default player color must be white.');
   assert(output.body.TeamRegionList.every(region => region.Color === '#FFFFFF'), 'Default region color must be white.');
-  assert(output.response.headers.get('content-disposition').includes('SCRIM%20HV.json'), 'Wrong download filename.');
+  assert(output.response.headers.get('content-disposition').includes('PlayerNameOverwrite.json'), 'Wrong download filename.');
 
   assert(output.body.PlayerNameList.filter(player => player.PlayerID === 992836236).length === 1, 'PlayerID bị xuất trùng.');
   assert(output.response.headers.get('cache-control').includes('no-store'), 'File export chưa tắt cache.');

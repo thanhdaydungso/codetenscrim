@@ -5,10 +5,10 @@ const vm = require('node:vm');
 const { buildLogoBundle } = require('../private/logo/logo-bundle');
 (async () => {
   const images = [{ name: '902000006.png', data: Uint8Array.of(137, 80, 78, 71) }, { name: 'bang_2/902000007.png', data: Uint8Array.of(1, 2, 3) }];
-  const playname = { name: 'SCRIM YN.json', data: new TextEncoder().encode(JSON.stringify({ PlayerNameList: [{ PlayerID: 123, PlayerNameOverwrite: 'TEST' }], TeamRegionList: [] })) };
+  const playname = { name: 'PlayerNameOverwrite.json', data: new TextEncoder().encode(JSON.stringify({ PlayerNameList: [{ PlayerID: 123, PlayerNameOverwrite: 'TEST' }], TeamRegionList: [] })) };
   const entries = buildLogoBundle(images, playname);
   assert.equal(entries.length, 7);
-  assert.deepEqual(entries.map(entry => entry.name), ['BackPackPics/902000006.png', 'BackPackPics/bang_2/902000007.png', 'GloowallPics/902000006.png', 'GloowallPics/bang_2/902000007.png', 'HeadPics/902000006.png', 'HeadPics/bang_2/902000007.png', 'SCRIM YN.json']);
+  assert.deepEqual(entries.map(entry => entry.name), ['BackPackPics/902000006.png', 'BackPackPics/bang_2/902000007.png', 'GloowallPics/902000006.png', 'GloowallPics/bang_2/902000007.png', 'HeadPics/902000006.png', 'HeadPics/bang_2/902000007.png', 'PlayerNameOverwrite.json']);
   assert.throws(() => buildLogoBundle(images, { ...playname, name: '../bad.json' }));
   const source = fs.readFileSync(require.resolve('../private/logo/script.js'), 'utf8');
   const context = vm.createContext({ Uint8Array, Uint32Array, DataView, TextEncoder, Blob });

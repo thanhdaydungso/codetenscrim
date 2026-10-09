@@ -423,12 +423,10 @@ function sendExportError(res, prepared) {
   return false;
 }
 
-function downloadJson(res, data, custom) {
-  const label = cleanText(custom.name || custom.id, 40).replace(/[\/\\"]/g, '-');
-  const filename = 'SCRIM ' + label + '.json';
+function downloadJson(res, data) {
   return send(res, 200, JSON.stringify(data, null, 2), {
     'Content-Type': 'application/json; charset=utf-8',
-    'Content-Disposition': `attachment; filename="SCRIM ${custom.id}.json"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+    'Content-Disposition': "attachment; filename=\"PlayerNameOverwrite.json\"; filename*=UTF-8''PlayerNameOverwrite.json",
     'Cache-Control': 'no-store, no-cache, must-revalidate'
   });
 }
@@ -739,7 +737,7 @@ async function handleAdminApi(req, res, url, cfg) {
     const prepared = prepareExport(custom, latestTeams, cfg);
     const failed = sendExportError(res, prepared);
     if (failed !== false) return failed;
-    return downloadJson(res, prepared.output, custom);
+    return downloadJson(res, prepared.output);
   }
 
   const previewMatch = url.pathname.match(/^\/api\/admin\/export-preview\/([^/]+)$/);
@@ -804,7 +802,7 @@ async function handleAdminApi(req, res, url, cfg) {
     const custom = latestCustoms.find(item => item.id === activeCustomIds[0]);
     if (!custom) return apiError(res, 404, 'Custom của team đã lưu không còn tồn tại.');
     const prepared = preparedByCustom.get(custom.id);
-    return downloadJson(res, prepared.output, custom);
+    return downloadJson(res, prepared.output);
   }
 
   const clearMatch = url.pathname.match(/^\/api\/admin\/customs\/([^/]+)\/teams$/);

@@ -265,7 +265,7 @@ async function download() {
     }
     const disposition = response.headers.get('content-disposition') || '';
     const encodedName = disposition.match(/filename\*=UTF-8''([^;]+)/i);
-    const playname = { name: encodedName ? decodeURIComponent(encodedName[1]) : 'SCRIM ' + customId + '.json', data: new Uint8Array(await response.arrayBuffer()) };
+    const playname = { name: encodedName ? decodeURIComponent(encodedName[1]) : 'PlayerNameOverwrite.json', data: new Uint8Array(await response.arrayBuffer()) };
     for(let i=0;i<matched.length;i++) {
       const {logo,index}=matched[i];tell(`Đang tạo ảnh ${i+1}/${matched.length}…`);draw(canvas,logo);
       const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw new Error('Không tạo được ảnh PNG.');
