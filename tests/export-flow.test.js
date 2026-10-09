@@ -190,8 +190,17 @@ async function run() {
   const legacyTeams = JSON.parse(fs.readFileSync(storedTeamsFile, 'utf8'));
   legacyTeams.find(team => team.id === submissionId).status = 'pending';
   fs.writeFileSync(storedTeamsFile, JSON.stringify(legacyTeams, null, 2), 'utf8');
+  const customsFile = path.join(TEST_DATA, 'customs.json');
+  const legacyCustoms = JSON.parse(fs.readFileSync(customsFile, 'utf8'));
+  const yn = legacyCustoms.find(custom => custom.id === 'YN');
+  yn.color = '#E08B2D';
+  delete yn.whiteDefaultMigrated;
+  fs.writeFileSync(customsFile, JSON.stringify(legacyCustoms), 'utf8');
   await startServer();
   cookie = await login();
+  const restartedCustoms = await request('/api/customs');
+  assert(restartedCustoms.body.data.find(custom => custom.id === 'YN').color === '#FFFFFF', 'Old YN default was not migrated to white');
+  assert(restartedCustoms.body.data.find(custom => custom.id === 'HV').color === '#123456', 'Admin-selected color was overwritten');
   output = await exportCustom('HV', cookie);
   assert(output.body.PlayerNameList[0].PlayerNameOverwrite === 'BTC.PLAYER.NEW', 'Restart server trả dữ liệu cũ.');
   assert(output.body.TeamRegionList.every(item => item.TeamRegion === 'CUSTOM MỚI'), 'Restart server làm mất TeamRegion mới.');

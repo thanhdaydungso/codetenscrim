@@ -96,7 +96,15 @@ async function ensureStorage() {
     return migrated;
   });
   const missingIds = [...new Set(migratedTeams.map(team => team.customId))].filter(id => id && !storedCustoms.some(custom => custom.id === id));
-  const migratedCustoms = [...storedCustoms, ...missingIds.map(id => {
+  const legacyColors = { MP: '#8B3FD1', XN: '#D1493F', HV: '#C62A67', YN: '#E08B2D' };
+  const updatedCustoms = storedCustoms.map(custom => {
+    if (custom.whiteDefaultMigrated) return custom;
+    changed = true;
+    const color = String(custom.color || '').toUpperCase();
+    const wasDefault = color === legacyColors[custom.id] || color === '#000000' || !color;
+    return { ...custom, color: wasDefault ? '#FFFFFF' : custom.color, whiteDefaultMigrated: true };
+  });
+  const migratedCustoms = [...updatedCustoms, ...missingIds.map(id => {
     changed = true;
     const now = new Date().toISOString();
     return { id, name: id, teamRegion: id, color: cfg.defaultColor, locked: false, createdAt: now, updatedAt: now };
