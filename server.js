@@ -6,6 +6,7 @@ const fsp = fs.promises;
 const path = require('path');
 const crypto = require('crypto');
 const { URL } = require('url');
+const { nextVietnamReset } = require('./reset-schedule');
 
 // Đọc .env nếu có (không cần thư viện ngoài)
 try {
@@ -47,7 +48,7 @@ function defaultConfig() {
     defaultRegion: 'HV',
     teamSlotCount: 9999,
     maxPlayersPerTeam: 6,
-    defaultColor: '#000000'
+    defaultColor: '#FFFFFF'
   };
 }
 
@@ -57,7 +58,7 @@ function initialCustoms() {
     id,
     name: id,
     teamRegion: id,
-    color: ['#8B3FD1', '#D1493F', '#C62A67', '#E08B2D'][index],
+    color: '#FFFFFF',
     locked: false,
     createdAt: now,
     updatedAt: now
@@ -197,7 +198,7 @@ function cleanText(value, max = 100) {
     .slice(0, max);
 }
 
-function normalizeColor(value, fallback = '#000000') {
+function normalizeColor(value, fallback = '#FFFFFF') {
   const color = cleanText(value, 7);
   return /^#[0-9a-fA-F]{6}$/.test(color) ? color.toUpperCase() : fallback;
 }
@@ -249,7 +250,7 @@ function validateTeamInput(input, cfg, options = {}) {
   const contact = cleanText(input.contact, 100);
   const note = cleanText(input.note, 300);
   const colorInput = cleanText(input.color, 7);
-  const color = /^#[0-9a-fA-F]{6}$/.test(colorInput) ? normalizeColor(colorInput, '#000000') : '';
+  const color = /^#[0-9a-fA-F]{6}$/.test(colorInput) ? normalizeColor(colorInput, '#FFFFFF') : '';
   const playerResult = validatePlayers(input.players, cfg.maxPlayersPerTeam);
   const errors = [...playerResult.errors];
   if (teamName.length < 2) errors.push('Tên team phải có từ 2 đến 40 ký tự.');
@@ -364,7 +365,7 @@ function prepareExport(custom, teams, cfg) {
     PlayerID: Number(playerId),
     PlayerNameOverwrite: playerName,
     PlayerNation: cleanText(player.playerNation || team.playerNation || team.teamName, 40),
-    Color: normalizeColor(team.color || custom.color, '#000000')
+    Color: normalizeColor(team.color, cfg.defaultColor || '#FFFFFF')
   }));
   const latestTime = [custom.updatedAt, ...approved.map(team => team.updatedAt || team.createdAt)]
     .map(value => Date.parse(value || 0) || 0)
@@ -376,7 +377,7 @@ function prepareExport(custom, teams, cfg) {
       TeamRegionList: Array.from({ length: 15 }, (_, index) => ({
         TeamID: index + 1,
         TeamRegion: cleanText(custom.teamRegion || custom.name, 30),
-        Color: normalizeColor(custom.color, cfg.defaultColor || '#000000')
+        Color: normalizeColor(custom.color, cfg.defaultColor || '#FFFFFF')
       }))
     },
     conflicts,
@@ -414,10 +415,12 @@ function sendExportError(res, prepared) {
   return false;
 }
 
-function downloadJson(res, data) {
+function downloadJson(res, data, custom) {
+  const label = cleanText(custom.name || custom.id, 40).replace(/[\/\\"]/g, '-');
+  const filename = 'SCRIM ' + label + '.json';
   return send(res, 200, JSON.stringify(data, null, 2), {
     'Content-Type': 'application/json; charset=utf-8',
-    'Content-Disposition': 'attachment; filename="PlayerNameOverwrite.json"',
+    'Content-Disposition': `attachment; filename="SCRIM ${custom.id}.json"; filename*=UTF-8''${encodeURIComponent(filename)}`,
     'Cache-Control': 'no-store, no-cache, must-revalidate'
   });
 }
@@ -728,7 +731,7 @@ async function handleAdminApi(req, res, url, cfg) {
     const prepared = prepareExport(custom, latestTeams, cfg);
     const failed = sendExportError(res, prepared);
     if (failed !== false) return failed;
-    return downloadJson(res, prepared.output);
+    return downloadJson(res, prepared.output, custom);
   }
 
   const previewMatch = url.pathname.match(/^\/api\/admin\/export-preview\/([^/]+)$/);
@@ -793,7 +796,7 @@ async function handleAdminApi(req, res, url, cfg) {
     const custom = latestCustoms.find(item => item.id === activeCustomIds[0]);
     if (!custom) return apiError(res, 404, 'Custom của team đã lưu không còn tồn tại.');
     const prepared = preparedByCustom.get(custom.id);
-    return downloadJson(res, prepared.output);
+    return downloadJson(res, prepared.output, custom);
   }
 
   const clearMatch = url.pathname.match(/^\/api\/admin\/customs\/([^/]+)\/teams$/);
@@ -863,17 +866,15 @@ const server = http.createServer(async (req, res) => {
 // Scheduler tự động reset toàn bộ submissions lúc 4:00 sáng mỗi ngày
 function scheduleDailyReset() {
   const now = new Date();
-  const next4am = new Date(now);
-  next4am.setHours(4, 0, 0, 0);
-  if (next4am <= now) next4am.setDate(next4am.getDate() + 1);
+  const next4am = nextVietnamReset(now);
   const msUntil = next4am - now;
-  console.log(`[Reset] Lần reset tiếp theo lúc ${next4am.toLocaleString('vi-VN')} (sau ${Math.round(msUntil / 60000)} phút)`);
+  console.log(`[Reset] Lần reset tiếp theo lúc ${next4am.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) + ' (VN)'} (sau ${Math.round(msUntil / 60000)} phút)`);
   setTimeout(async () => {
     try {
       await withWriteLock(async () => {
         await backupFiles('auto-reset-4am');
         await writeJsonAtomic(TEAM_FILE, []);
-        console.log(`[Reset] Đã xóa toàn bộ submissions lúc ${new Date().toLocaleString('vi-VN')}`);
+        console.log(`[Reset] Đã xóa toàn bộ submissions lúc ${new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}`);
       });
     } catch (error) {
       console.error('[Reset] Lỗi khi reset submissions:', error.message);

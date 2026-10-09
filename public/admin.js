@@ -96,7 +96,7 @@ function renderTeams() {
         <div class="field"><label>TÊN TEAM</label><input data-team-field="teamName" maxlength="40" value="${escapeHtml(team.teamName)}"></div>
         <div class="field"><label>PLAYER NATION MẶC ĐỊNH</label><input data-team-field="playerNation" maxlength="40" value="${escapeHtml(team.playerNation || team.teamName)}"></div>
         <div class="field"><label>CHUYỂN SANG CUSTOM</label><select data-team-field="customId">${customs.map(item => `<option value="${escapeHtml(item.id)}" ${item.id === team.customId ? 'selected' : ''}>${escapeHtml(item.name)}</option>`).join('')}</select></div>
-        <div class="field"><label>MÀU TEAM</label><input data-team-field="color" type="color" value="${escapeHtml(team.color || '#000000')}"></div>
+        <div class="field"><label>MÀU TEAM</label><input data-team-field="color" type="color" value="${escapeHtml(team.color || '#FFFFFF')}"></div>
       </div>
       <div class="admin-players">${(team.players || []).map((player, index) => playerRow(player, index)).join('')}</div>
       <button class="button secondary add-player" data-action="add-player" type="button">+ THÊM NGƯỜI CHƠI</button>
@@ -338,11 +338,14 @@ async function download(path) {
       : '';
     throw new Error((result.message || 'Không xuất được JSON.') + conflictText);
   }
+  const disposition = response.headers.get('content-disposition') || '';
+  const encodedName = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+  const filename = encodedName ? decodeURIComponent(encodedName[1]) : 'SCRIM.json';
   const blob = await response.blob();
   const url = URL.createObjectURL(blob);
-  const link = document.createElement('a'); link.href = url; link.download = 'PlayerNameOverwrite.json'; link.click();
+  const link = document.createElement('a'); link.href = url; link.download = filename; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  showNotice('Đã tải PlayerNameOverwrite.json.');
+  showNotice('Đã tải ' + filename + '.');
   await loadTeams();
 }
 

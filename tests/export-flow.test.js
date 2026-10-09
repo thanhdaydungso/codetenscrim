@@ -89,6 +89,14 @@ async function exportCustom(customId, cookie) {
 }
 
 async function run() {
+  const { nextVietnamReset } = require('../reset-schedule');
+  for (const [input, expected] of [
+    ['2026-10-09T20:59:59.000Z', '2026-10-09T21:00:00.000Z'],
+    ['2026-10-09T21:00:00.000Z', '2026-10-10T21:00:00.000Z'],
+    ['2026-10-09T22:00:00.000Z', '2026-10-10T21:00:00.000Z'],
+    ['2026-12-31T22:00:00.000Z', '2027-01-01T21:00:00.000Z']
+  ]) assert(nextVietnamReset(new Date(input)).toISOString() === expected, 'Incorrect Vietnam reset time: ' + input);
+
   port = await findFreePort();
   baseUrl = `http://127.0.0.1:${port}`;
   await startServer();
@@ -114,6 +122,8 @@ async function run() {
   await admin('/api/admin/logout', logoCookie, { method: 'POST' });
   const loggedOut = await fetch(baseUrl + '/logo/script.js', { headers: { Cookie: logoCookie }, redirect: 'manual' });
   assert(loggedOut.status === 302, 'Phi?n ?? ??ng xu?t v?n truy c?p ???c logo.');
+  const ynExport = await exportCustom('YN', cookie);
+  assert(ynExport.response.ok && ynExport.response.headers.get('content-disposition').includes('SCRIM%20YN.json'), 'YN filename must be SCRIM YN.json');
   const defaultCustoms = await request('/api/customs');
   assert(defaultCustoms.body.data.some(custom => custom.id === 'YN'), 'Custom YN chưa được tạo mặc định.');
 
@@ -126,7 +136,11 @@ async function run() {
   assert(created.body.data.team.status === 'approved', 'Team gửi lên chưa được tự động lưu/duyệt.');
 
   let output = await exportCustom('HV', cookie);
-  assert(output.response.ok, 'Không xuất được custom HV.');
+  assert(output.response.ok, 'Export failed.');
+  assert(output.body.PlayerNameList.every(player => player.Color === '#FFFFFF'), 'Default player color must be white.');
+  assert(output.body.TeamRegionList.every(region => region.Color === '#FFFFFF'), 'Default region color must be white.');
+  assert(output.response.headers.get('content-disposition').includes('SCRIM%20HV.json'), 'Wrong download filename.');
+
   assert(output.body.PlayerNameList.filter(player => player.PlayerID === 992836236).length === 1, 'PlayerID bị xuất trùng.');
   assert(output.response.headers.get('cache-control').includes('no-store'), 'File export chưa tắt cache.');
 
