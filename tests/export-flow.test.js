@@ -93,6 +93,27 @@ async function run() {
   baseUrl = `http://127.0.0.1:${port}`;
   await startServer();
   let cookie = await login();
+  const logoPaths = ['/logo', '/admin/logo', '/logo/', '/logo/index.html', '/logo/style.css', '/logo/script.js', '/logo/avatars_b64.js'];
+  for (const route of logoPaths) {
+    for (const headers of [{}, { Cookie: 'btc_session=invalid' }]) {
+      const response = await fetch(baseUrl + route, { headers, redirect: 'manual' });
+      assert(response.status === 302 && response.headers.get('location') === '/admin', 'Logo ph?i ch?n kh?ch: ' + route);
+    }
+  }
+  for (const route of logoPaths.slice(2)) {
+    const response = await fetch(baseUrl + route, { headers: { Cookie: cookie }, redirect: 'manual' });
+    assert(response.status === 200, 'Admin kh?ng m? ???c logo: ' + route);
+    assert(response.headers.get('cache-control') === 'no-store', 'Logo kh?ng ???c cache: ' + route);
+    const content = await response.text();
+    assert(content.length > 0, 'File logo r?ng: ' + route);
+    if (route === '/logo/') assert(content.includes('B?ng qu?n tr? code t?n'), 'Thi?u li?n k?t v? admin.');
+  }
+  const privateFile = await fetch(baseUrl + '/private/logo/script.js', { redirect: 'manual' });
+  assert(privateFile.status === 404, 'File ri?ng t? b? l? qua static.');
+  const logoCookie = await login();
+  await admin('/api/admin/logout', logoCookie, { method: 'POST' });
+  const loggedOut = await fetch(baseUrl + '/logo/script.js', { headers: { Cookie: logoCookie }, redirect: 'manual' });
+  assert(loggedOut.status === 302, 'Phi?n ?? ??ng xu?t v?n truy c?p ???c logo.');
   const defaultCustoms = await request('/api/customs');
   assert(defaultCustoms.body.data.some(custom => custom.id === 'YN'), 'Custom YN chưa được tạo mặc định.');
 
@@ -173,6 +194,7 @@ async function run() {
     process.exitCode = 1;
   } finally {
     await stopServer();
+    if (path.dirname(TEST_DATA) !== ROOT || !path.basename(TEST_DATA).startsWith('.test-export-')) throw new Error('Unsafe test cleanup path');
     fs.rmSync(TEST_DATA, { recursive: true, force: true });
   }
 })();

@@ -810,10 +810,39 @@ async function handleAdminApi(req, res, url, cfg) {
   return false;
 }
 
+function serveLogo(req, res, url) {
+  if (!adminSession(req)) {
+    return send(res, 302, '', { Location: '/admin' });
+  }
+  if (url.pathname === '/logo' || url.pathname === '/admin/logo') {
+    return send(res, 302, '', { Location: '/logo/' });
+  }
+  const files = {
+    '/logo/': 'index.html',
+    '/logo/index.html': 'index.html',
+    '/logo/style.css': 'style.css',
+    '/logo/script.js': 'script.js',
+    '/logo/avatars_b64.js': 'avatars_b64.js'
+  };
+  const file = files[url.pathname];
+  if (!file) return send(res, 404, 'Kh?ng t?m th?y trang.');
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return send(res, 405, '', { Allow: 'GET, HEAD' });
+  }
+  const body = fs.readFileSync(path.join(ROOT, 'private', 'logo', file));
+  return send(res, 200, req.method === 'HEAD' ? undefined : body, {
+    'Content-Type': MIME[path.extname(file)],
+    Vary: 'Cookie'
+  });
+}
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const cfg = config();
   try {
+    if (url.pathname === '/admin/logo' || url.pathname === '/logo' || url.pathname.startsWith('/logo/')) {
+      return serveLogo(req, res, url);
+    }
     if (url.pathname.startsWith('/api/admin/')) {
       const handled = await handleAdminApi(req, res, url, cfg);
       if (handled !== false) return handled;
