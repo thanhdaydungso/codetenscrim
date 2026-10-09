@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 const $ = id => document.getElementById(id);
 let teams = [], logos = [], busy = false, uploading = false;
 let manualAssignments = [];
@@ -124,7 +124,7 @@ function render() {
     logoCell.append(logoImage);
     const avatarCell = document.createElement('td');
     const avatarImage = document.createElement('img');
-    avatarImage.src = '/logo/avatars/' + avatar.file + '.png';
+    avatarImage.src = 'data:image/png;base64,' + AVATAR_B64[avatar.file];
     avatarImage.alt = avatar.name;
     avatarImage.className = 'character-avatar';
     avatarCell.append(avatarImage);
@@ -311,7 +311,7 @@ async function tableImageBlob() {
   const characterImages = new Map();
   await Promise.all([...new Set(rows.map(row => row.avatar.file))].map(async file => {
     const image = new Image();
-    image.src = '/logo/avatars/' + file + '.png';
+    image.src = 'data:image/png;base64,' + AVATAR_B64[file];
     await image.decode(); characterImages.set(file, image);
   }));
   const boundaries = [0, headerHeight]; let y = headerHeight;

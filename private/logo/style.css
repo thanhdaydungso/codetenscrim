@@ -14,3 +14,25 @@
 .logo-tray{display:grid;grid-template-columns:repeat(auto-fill,minmax(95px,1fr));gap:10px;margin:12px 0;max-height:320px;overflow:auto}.logo-card{background:#202b40;border:1px solid #3a4660;border-radius:8px;padding:10px;text-align:center;cursor:grab;min-width:0}.logo-card img{width:60px;height:60px;object-fit:contain}.logo-card span{display:block;font-size:11px;overflow-wrap:anywhere;margin-top:6px}.logo-card:active{cursor:grabbing}.avatar-roster td.logo-target{outline:1px dashed #a8b0c2;outline-offset:-5px}.avatar-roster td.drag-over{background:#dce4ff;outline:2px dashed #697bf7}.manual-logo-select{display:block;max-width:130px;margin:8px auto 0;padding:5px;font-size:11px}
 
 .logo-controls{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px}.logo-controls .manual-logo-select{margin:0;min-width:0;max-width:100px}.avatar-roster td .remove-logo{margin:0;padding:6px 8px;white-space:nowrap;color:#ffb3b3;background:#492832;border-color:#71414e}
+
+/* Final page-specific layout, loaded after the shared theme. */
+.logo-page .logo-main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
+.logo-page .logo-main > .panel:first-child { grid-column: 1; grid-row: 1; }
+.logo-page .logo-main > .panel:last-child { grid-column: 2; grid-row: 1; }
+.logo-page .logo-main > .roster-panel { grid-column: 1 / -1; grid-row: 2; }
+.logo-page .roster-panel .table-wrap { margin-top: 0; max-height: 650px; }
+.logo-page .avatar-roster { width: 100%; min-width: 560px; }
+.logo-page .avatar-roster th { position: sticky; top: 0; z-index: 2; }
+.logo-page .avatar-roster td:nth-child(2) { width: 35%; }
+.logo-page .logo-controls .manual-logo-select { width: 120px; max-width: 120px; }
+.logo-page #teamInput { height: 130px; }
+.logo-page .preview-row { margin: 14px 0; }
+.logo-page #preview { width: 112px; height: 112px; }
+.logo-page .logo-main .panel { padding: 18px; }
+.logo-page .warning { padding: 8px 10px; background: rgba(242,195,124,.08); border-radius: 6px; }
+@media (max-width: 900px) {
+  .logo-page .logo-main { grid-template-columns: minmax(0, 1fr); }
+  .logo-page .logo-main > .panel:first-child { grid-column: 1; grid-row: 1; }
+  .logo-page .logo-main > .panel:last-child { grid-column: 1; grid-row: 2; }
+  .logo-page .logo-main > .roster-panel { grid-column: 1; grid-row: 3; }
+}
