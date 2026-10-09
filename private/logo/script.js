@@ -124,7 +124,7 @@ function render() {
     logoCell.append(logoImage);
     const avatarCell = document.createElement('td');
     const avatarImage = document.createElement('img');
-    avatarImage.src = 'data:image/png;base64,' + AVATAR_B64[avatar.file];
+    avatarImage.src = '/logo/avatars/' + avatar.file + '.png';
     avatarImage.alt = avatar.name;
     avatarImage.className = 'character-avatar';
     avatarCell.append(avatarImage);
@@ -156,6 +156,7 @@ function render() {
   $('stats').textContent = `${teams.length} team · ${logos.length} logo · ${count} đã ghép`;
   $('download').disabled = !teams.length || !$('playnameCustom').value || busy || uploading;
   $('playnameCustom').disabled = busy || uploading;
+  $('pickCustom').disabled = busy || uploading;
   $('copyTable').disabled = !teams.length || busy || uploading;
   ['replace','append','reset','files'].forEach(id => $(id).disabled = busy || (id === 'files' && uploading));
 
@@ -310,8 +311,7 @@ async function tableImageBlob() {
   const characterImages = new Map();
   await Promise.all([...new Set(rows.map(row => row.avatar.file))].map(async file => {
     const image = new Image();
-    image.src = typeof AVATAR_B64 !== 'undefined' && AVATAR_B64[file]
-      ? 'data:image/png;base64,' + AVATAR_B64[file] : 'avatars/' + file + '.png';
+    image.src = '/logo/avatars/' + file + '.png';
     await image.decode(); characterImages.set(file, image);
   }));
   const boundaries = [0, headerHeight]; let y = headerHeight;
@@ -376,8 +376,18 @@ async function loadPlaynameCustoms() {
     const select = $('playnameCustom');
     select.replaceChildren(new Option('Chọn custom playname', ''));
     for (const custom of result.data) select.add(new Option(custom.name + ' (' + custom.playerCount + ' player)', custom.id));
-    select.onchange = render;
+    select.onchange = () => {
+      $('customChoice').textContent = select.value ? 'Xuất kèm: ' + select.selectedOptions[0].textContent : 'Chưa chọn custom xuất kèm.';
+      render();
+    };
     render();
   } catch (error) { tell(error.message); }
 }
 loadPlaynameCustoms();
+
+$('pickCustom').onclick = () => {
+  const picker = $('customPicker');
+  picker.hidden = !picker.hidden;
+  $('pickCustom').setAttribute('aria-expanded', String(!picker.hidden));
+  if (!picker.hidden) $('playnameCustom').focus();
+};

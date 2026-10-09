@@ -101,7 +101,7 @@ async function run() {
   baseUrl = `http://127.0.0.1:${port}`;
   await startServer();
   let cookie = await login();
-  const logoPaths = ['/logo', '/admin/logo', '/logo/', '/logo/index.html', '/logo/style.css', '/logo/script.js', '/logo/avatars_b64.js', '/logo/logo-bundle.js'];
+  const logoPaths = ['/logo', '/admin/logo', '/logo/', '/logo/index.html', '/logo/style.css', '/logo/script.js', '/logo/avatars_b64.js', '/logo/logo-bundle.js', '/logo/avatars/Andrew.png', '/logo/avatars/Kelly.png'];
   for (const route of logoPaths) {
     for (const headers of [{}, { Cookie: 'btc_session=invalid' }]) {
       const response = await fetch(baseUrl + route, { headers, redirect: 'manual' });
@@ -112,6 +112,11 @@ async function run() {
     const response = await fetch(baseUrl + route, { headers: { Cookie: cookie }, redirect: 'manual' });
     assert(response.status === 200, 'Admin kh?ng m? ???c logo: ' + route);
     assert(response.headers.get('cache-control') === 'no-store', 'Logo kh?ng ???c cache: ' + route);
+    if (route.endsWith('.png')) {
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      assert(bytes.slice(0, 8).join(',') === '137,80,78,71,13,10,26,10', 'Invalid avatar PNG: ' + route);
+      continue;
+    }
     const content = await response.text();
     assert(content.length > 0, 'File logo r?ng: ' + route);
     if (route === '/logo/') assert(content.includes('class="code-menu"') && content.includes('href="/admin"'), 'Missing admin menu link.');

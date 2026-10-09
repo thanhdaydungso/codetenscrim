@@ -834,7 +834,8 @@ function serveLogo(req, res, url) {
     '/logo/style.css': 'style.css',
     '/logo/script.js': 'script.js',
     '/logo/logo-bundle.js': 'logo-bundle.js',
-    '/logo/avatars_b64.js': 'avatars_b64.js'
+    '/logo/avatars_b64.js': 'avatars_b64.js',
+    ...Object.fromEntries(["Andrew","Kelly","Olivia","Ford","Nikita","Misha","Maxim","Kla","Paloma","Miguel","Caroline","Antonio","NgoKhong","Moco","Hayato"].map(name => ['/logo/avatars/' + name + '.png', 'avatars/' + name + '.png']))
   };
   const file = files[url.pathname];
   if (!file) return send(res, 404, 'Kh?ng t?m th?y trang.');
