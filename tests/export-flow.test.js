@@ -200,6 +200,9 @@ async function run() {
   fs.writeFileSync(storedTeamsFile, JSON.stringify(legacyTeams, null, 2), 'utf8');
   const customsFile = path.join(TEST_DATA, 'customs.json');
   const legacyCustoms = JSON.parse(fs.readFileSync(customsFile, 'utf8'));
+  const mp = legacyCustoms.find(custom => custom.id === 'MP');
+  mp.color = '#30F708';
+  delete mp.mpWhiteDefaultV2;
   const yn = legacyCustoms.find(custom => custom.id === 'YN');
   yn.color = '#E08B2D';
   yn.teamRegion = 'YN';
@@ -209,6 +212,8 @@ async function run() {
   await startServer();
   cookie = await login();
   const restartedCustoms = await request('/api/customs');
+  assert(restartedCustoms.body.data.find(custom => custom.id === 'MP').color === '#FFFFFF', 'MP legacy default was not changed to white');
+  await admin('/api/admin/customs/MP', cookie, { method: 'PUT', body: JSON.stringify({ color: '#654321' }) });
   assert(restartedCustoms.body.data.find(custom => custom.id === 'YN').teamRegion === 'SCRIM YN', 'Old YN TeamRegion was not migrated');
   assert(restartedCustoms.body.data.find(custom => custom.id === 'YN').color === '#FFFFFF', 'Old YN default was not migrated to white');
   assert(restartedCustoms.body.data.find(custom => custom.id === 'HV').color === '#123456', 'Admin-selected color was overwritten');
@@ -243,6 +248,7 @@ async function run() {
   await startServer();
   cookie = await login();
   const afterReset = await request('/api/customs');
+  assert(afterReset.body.data.find(custom => custom.id === 'MP').color === '#654321', 'MP migration overwrote a later admin color change');
   assert(afterReset.body.data.some(custom => custom.id === 'NEW'), 'Added custom disappeared after reset/restart');
   assert(afterReset.body.data.find(custom => custom.id === 'HV').color === '#123456', 'Custom settings disappeared after reset');
   await admin('/api/admin/customs/NEW', cookie, { method: 'DELETE' });

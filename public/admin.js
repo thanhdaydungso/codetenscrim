@@ -19,15 +19,18 @@ function showNotice(message, type = 'ok', target = $('#notice')) {
 }
 
 async function api(path, options = {}) {
-  const response = await fetch(path, { credentials: 'same-origin', ...options, headers: { 'Content-Type': 'application/json', ...(options.headers || {}) } });
-  const type = response.headers.get('content-type') || '';
-  const result = type.includes('application/json') ? await response.json() : null;
-  if (!response.ok || !result?.success) {
-    if (response.status === 401 && path !== '/api/admin/login') showLogin();
-    const detail = result?.errors?.length ? ` ${result.errors.join(' ')}` : '';
-    throw new Error((result?.message || 'Yêu cầu thất bại.') + detail);
-  }
-  return result;
+  document.dispatchEvent(new Event('ui-request-start'));
+  try {
+    const response = await fetch(path, { credentials: 'same-origin', ...options, headers: { 'Content-Type': 'application/json', ...(options.headers || {}) } });
+    const type = response.headers.get('content-type') || '';
+    const result = type.includes('application/json') ? await response.json() : null;
+    if (!response.ok || !result?.success) {
+      if (response.status === 401 && path !== '/api/admin/login') showLogin();
+      const detail = result?.errors?.length ? ` ${result.errors.join(' ')}` : '';
+      throw new Error((result?.message || 'Yêu cầu thất bại.') + detail);
+    }
+    return result;
+  } finally { document.dispatchEvent(new Event('ui-request-end')); }
 }
 
 function showLogin() {
@@ -71,7 +74,7 @@ function renderCustoms() {
       <button class="custom-select" data-action="select" type="button"><span style="background:${escapeHtml(custom.color)}"></span><b>${escapeHtml(custom.name)}</b><small>${custom.teamCount} đội · ${custom.playerCount} player · ${custom.id === selectedId ? 'XEM' : 'MỞ'}</small></button>
       <div class="custom-settings">
         <div class="field"><label>TEAM REGION</label><input data-field="teamRegion" maxlength="30" value="${escapeHtml(custom.teamRegion)}"></div>
-        <div class="color-field"><input data-field="color" type="color" value="${escapeHtml(custom.color)}"><span>${custom.locked ? 'Đã khóa' : 'Đang mở'}</span></div>
+        <div class="color-field"><input data-field="color" aria-label="Màu custom" type="color" value="${escapeHtml(custom.color)}"><span>${custom.locked ? 'Đã khóa' : 'Đang mở'}</span></div>
         <div class="actions compact-actions">
           <button class="button secondary" data-action="save" type="button">LƯU MÀU CUSTOM</button>
           <button class="button ${custom.locked ? 'success' : 'warning'}" data-action="toggle" type="button">${custom.locked ? 'MỞ NHẬN' : 'KHÓA NHẬN'}</button>
@@ -79,6 +82,7 @@ function renderCustoms() {
         </div>
       </div>
     </article>`).join('');
+  filterAdminLists();
 }
 
 function renderTeams() {
@@ -89,6 +93,7 @@ function renderTeams() {
   $('#clearCustom').disabled = !selected;
   if (!selected) return $('#teamList').innerHTML = '<div class="empty-state">Chọn một custom để xem danh sách team.</div>';
   if (!teams.length) return $('#teamList').innerHTML = '<div class="empty-state">Custom này chưa có team.</div>';
+  $('#teamSearchSummary').textContent = '';
   $('#teamList').innerHTML = [...teams].sort((a, b) => a.teamSlot - b.teamSlot).map(team => `
     <article class="team-editor" data-team-id="${escapeHtml(team.id)}">
       <div class="team-editor-head"><div><span class="team-slot">#${team.teamSlot}</span><b>${escapeHtml(team.teamName)}</b><small>${formatDate(team.createdAt)}</small></div><span class="status ${team.status}">${statusLabel(team.status)}</span></div>
@@ -102,10 +107,11 @@ function renderTeams() {
       <button class="button secondary add-player" data-action="add-player" type="button">+ THÊM NGƯỜI CHƠI</button>
       <div class="actions team-actions"><button class="button primary" data-action="save-team">LƯU THAY ĐỔI</button><button class="button danger" data-action="delete-team">XÓA ĐỘI</button></div>
     </article>`).join('');
+  filterAdminLists();
 }
 
 function playerRow(player = {}, index = 0) {
-  return `<div class="admin-player"><span>${index + 1}</span><input class="admin-player-id" inputmode="numeric" placeholder="ID game" value="${escapeHtml(player.playerId || '')}"><input class="admin-player-name" maxlength="50" placeholder="Tên ingame" value="${escapeHtml(player.playerName || '')}"><input class="admin-player-nation" maxlength="40" placeholder="PlayerNation (tùy chọn)" value="${escapeHtml(player.playerNation || '')}"><button class="icon-button remove-player" type="button" aria-label="Xóa người chơi">×</button></div>`;
+  return `<div class="admin-player"><span>${index + 1}</span><input class="admin-player-id" aria-label="ID game" inputmode="numeric" placeholder="ID game" value="${escapeHtml(player.playerId || '')}"><input class="admin-player-name" aria-label="Tên ingame" maxlength="50" placeholder="Tên ingame" value="${escapeHtml(player.playerName || '')}"><input class="admin-player-nation" aria-label="Player Nation" maxlength="40" placeholder="PlayerNation (tùy chọn)" value="${escapeHtml(player.playerNation || '')}"><button class="icon-button remove-player" type="button" aria-label="Xóa người chơi">×</button></div>`;
 }
 
 async function loadCustoms(preserve = true) {
@@ -114,7 +120,7 @@ async function loadCustoms(preserve = true) {
   customs = result.data;
   if (!preserve || !customs.some(item => item.id === selectedId)) selectedId = customs[0]?.id || '';
   renderCustoms();
-  if (selectedId) await loadTeams(); else renderTeams();
+  await loadTeams();
 }
 
 async function loadTeams() {
@@ -186,6 +192,8 @@ $('#loginForm').addEventListener('submit', async event => {
 $('#togglePassword').addEventListener('click', () => {
   const input = $('#adminPassword');
   input.type = input.type === 'password' ? 'text' : 'password';
+  $('#togglePassword').setAttribute('aria-pressed', String(input.type === 'text'));
+  $('#togglePassword').setAttribute('aria-label', input.type === 'text' ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
 });
 
 $('#logoutButton').addEventListener('click', async () => {
@@ -361,3 +369,24 @@ $('#clearCustom').addEventListener('click', async () => {
   try { await api('/api/admin/session'); showDashboard(); await loadCustoms(false); }
   catch { showLogin(); }
 })();
+
+function filterAdminLists() {
+  const customQuery = $('#adminCustomSearch').value.trim().toLocaleLowerCase('vi');
+  let customMatches = 0;
+  document.querySelectorAll('[data-custom-id]').forEach(card => {
+    const custom = customs.find(item => item.id === card.dataset.customId);
+    card.hidden = !((custom?.name || '') + ' ' + card.dataset.customId).toLocaleLowerCase('vi').includes(customQuery);
+    if (!card.hidden) customMatches++;
+  });
+  $('#adminCustomSearchEmpty').hidden = !customQuery || customMatches > 0;
+  const teamQuery = $('#adminTeamSearch').value.trim().toLocaleLowerCase('vi');
+  let teamMatches = 0;
+  document.querySelectorAll('[data-team-id]').forEach(card => {
+    const values = Array.from(card.querySelectorAll('input')).map(input => input.value).join(' ');
+    card.hidden = !(card.textContent + ' ' + values).toLocaleLowerCase('vi').includes(teamQuery);
+    if (!card.hidden) teamMatches++;
+  });
+  $('#teamSearchSummary').textContent = teamQuery ? teamMatches + ' đội phù hợp' : '';
+}
+$('#adminCustomSearch').addEventListener('input', filterAdminLists);
+$('#adminTeamSearch').addEventListener('input', filterAdminLists);

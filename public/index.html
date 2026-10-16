@@ -6,7 +6,7 @@
   <meta name="description" content="Cổng đăng ký code tên cho giải đấu Free Fire.">
   <title>Cổng quản lý code tên</title>
   <link rel="stylesheet" href="/styles.css">
-</head>
+<link rel="stylesheet" href="/ui.css?v=20261017-5"><script src="/ui.js?v=20261017-5" defer></script></head>
 <body>
   <header class="site-header">
     <div class="container header-inner">
@@ -22,21 +22,22 @@
   </header>
 
   <main>
-    <section class="hero container">
+    <section class="hero container"><div class="hero-copy"><span class="eyebrow hero-kicker">FREE FIRE · TOURNAMENT HUB</span>
       <h1>CỔNG QUẢN LÝ<br><span>CODE TÊN</span></h1>
       <p>Chọn đúng custom để đăng ký đội hình. Hệ thống kiểm tra ID, bảo vệ mã chỉnh sửa và chuyển dữ liệu trực tiếp tới ban tổ chức.</p>
-      <div class="hero-stats" aria-label="Thống kê">
+      <a class="button primary hero-action" href="#customDirectory">Chọn custom ngay <span aria-hidden="true">↓</span></a><div class="hero-stats" aria-label="Thống kê">
         <div><b id="customCount">—</b><span>Custom</span></div>
         <div><b id="openCount">—</b><span>Đang mở</span></div>
-        <div><b>15</b><span>Đội / custom</span></div>
+        <div><b id="memberCapacity">—</b><span>Thành viên / đội</span></div>
       </div>
+      </div><aside class="hero-guide" aria-label="Các bước đăng ký"><span class="eyebrow">TỪ ĐỘI HÌNH ĐẾN TRẬN ĐẤU</span><h2>Sẵn sàng trong<br> 3 bước đơn giản.</h2><ol><li><span>01</span><div><b>Chọn custom</b><p>Tìm phòng thi đấu đang mở của bạn.</p></div></li><li><span>02</span><div><b>Nhập đội hình</b><p>Dán nhanh danh sách ID và tên ingame.</p></div></li><li><span>03</span><div><b>Gửi và lưu mã</b><p>Dùng mã chỉnh sửa để cập nhật đội hình.</p></div></li></ol></aside>
     </section>
 
-    <section class="container section-space">
+    <section id="customDirectory" class="container section-space">
       <div class="section-heading">
-        <div><span class="eyebrow"></span><h2>CHỌN CUSTOM</h2></div>
+        <div><span class="eyebrow">SẴN SÀNG VÀO TRẬN</span><h2>CHỌN CUSTOM</h2></div>
       </div>
-      <div id="notice" class="notice" role="status"></div>
+      <div class="browse-tools"><div class="search-field"><label for="customSearch">Tìm custom</label><input id="customSearch" type="search" placeholder="Nhập tên custom…" autocomplete="off"></div><div class="filter-tabs" role="group" aria-label="Lọc custom"><button type="button" data-status-filter="all" aria-pressed="true">Tất cả</button><button type="button" data-status-filter="open" aria-pressed="false">Đang mở</button><button type="button" data-status-filter="full" aria-pressed="false">Đã đầy</button><button type="button" data-status-filter="locked" aria-pressed="false">Đã khóa</button></div><span id="searchSummary" class="muted" role="status"></span></div><div id="notice" class="notice" role="status"></div>
       <div id="customList" class="custom-grid" aria-live="polite">
         <div class="loading-card">Đang tải danh sách custom…</div>
       </div>

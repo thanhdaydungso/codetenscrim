@@ -47,3 +47,11 @@ Team gửi hoặc cập nhật code tên được tự động lưu với trạn
 Định dạng game chỉ có 15 `TeamID`, vì vậy `export-all` chỉ tạo file khi dữ liệu đã lưu thuộc đúng một custom. Nếu có nhiều custom, BTC phải chọn từng custom để tránh tạo `TeamID` trùng trong cùng file.
 
 Reset lúc 04:00 giờ Việt Nam chỉ xóa team/player trong `submissions.json`. Danh sách custom, tên, màu, TeamRegion và trạng thái khóa trong `customs.json` được giữ nguyên, kể cả custom do BTC thêm. Nút RS team/player của một custom cũng giữ lại custom đó. Chỉ thao tác xóa custom mới xóa custom khỏi danh sách.
+
+## Giao diện và kiểm tra
+
+Giao diện chung nằm trong `public/ui.css` và `public/ui.js`, dùng cho trang chủ, đăng ký, BTC và logo. Trang chủ có tìm kiếm và lọc trạng thái custom; BTC tìm custom và team theo tên hoặc ID; form đội hỗ trợ sao chép mã chỉnh sửa. Animation tôn trọng tùy chọn giảm chuyển động của hệ điều hành.
+
+Chạy `npm test` để kiểm tra xuất dữ liệu, reset và migration. Chạy `npm run test:ui` để kiểm tra desktop/mobile bằng Chrome hoặc Edge; đặt `UI_BROWSER` tới đường dẫn Chromium khi cần. Ảnh kiểm tra được lưu trong thư mục tạm, đường dẫn hiển thị sau khi chạy.
+
+Custom MP được chuyển sang trắng `#FFFFFF` một lần khi nâng cấp (cờ `mpWhiteDefaultV2`). Những lần đổi màu sau đó của BTC được giữ nguyên qua các lần khởi động lại.

@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test": "node tests/export-flow.test.js && node tests/logo-bundle.test.js"
+    "test": "node tests/export-flow.test.js && node tests/logo-bundle.test.js",
+    "test:ui": "node tests/ui-smoke.test.js"
   },
   "engines": {
     "node": ">=18"

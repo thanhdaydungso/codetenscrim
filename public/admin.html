@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Bảng điều khiển BTC</title>
   <link rel="stylesheet" href="/styles.css">
-</head>
+<link rel="stylesheet" href="/ui.css?v=20261017-5"><script src="/ui.js?v=20261017-5" defer></script></head>
 <body>
   <header class="site-header">
     <div class="container header-inner">
@@ -19,7 +19,7 @@
       <div class="panel login-panel">
         <span class="eyebrow">KHU VỰC BẢO MẬT</span>
         <h1>BTC ĐĂNG NHẬP</h1>
-        <p class="muted">Mật khẩu chỉ được gửi tới backend để tạo phiên đăng nhập bảo mật.</p>
+        <p class="muted">Đăng nhập để quản lý custom, đội hình và xuất dữ liệu giải đấu.</p>
         <div id="loginNotice" class="notice" role="status"></div>
         <form id="loginForm">
           <div class="field"><label for="adminPassword">MẬT KHẨU QUẢN TRỊ</label><div class="password-field"><input id="adminPassword" type="password" autocomplete="current-password" required><button id="togglePassword" class="icon-button" type="button" aria-label="Hiện mật khẩu">◉</button></div></div>
@@ -36,14 +36,14 @@
         <div class="stat"><b>0</b><span>Custom</span></div><div class="stat"><b>0</b><span>Tổng đội</span></div><div class="stat"><b>0</b><span>Đã lưu</span></div><div class="stat"><b>0</b><span>Người chơi</span></div>
       </div>
 
-      <div class="admin-layout">
+      <p class="schedule-note"><span class="sync-dot" aria-hidden="true"></span>Tự RS team/player lúc 04:00 giờ Việt Nam, 1 lần/ngày. Danh sách và cấu hình custom được giữ nguyên.</p><div class="admin-layout">
         <aside class="panel custom-sidebar">
           <div class="panel-head"><div><span class="step">01</span><h2>DANH SÁCH CUSTOM</h2></div></div>
           <form id="addCustomForm" class="add-custom-form">
             <div class="field"><label for="newCustom">TÊN / TEAM REGION</label><input id="newCustom" maxlength="30" placeholder="Ví dụ: HV" required></div>
             <button class="button primary wide" type="submit">+ THÊM CUSTOM</button>
           </form>
-          <div id="customAdminList" class="custom-admin-list"></div>
+          <div class="sidebar-search"><label for="adminCustomSearch">Tìm custom</label><input id="adminCustomSearch" type="search" placeholder="Tên custom…"></div><p id="adminCustomSearchEmpty" class="search-empty" hidden>Không tìm thấy custom.</p><div id="customAdminList" class="custom-admin-list"></div>
         </aside>
 
         <section class="admin-content">
@@ -65,7 +65,7 @@
                 <div id="exportPreview" class="export-preview"></div>
               </div>
             </div>
-            <div id="teamList" class="team-admin-list"><div class="empty-state">Chọn một custom để xem danh sách team.</div></div>
+            <div class="team-search"><label for="adminTeamSearch">Tìm đội / player</label><input id="adminTeamSearch" type="search" placeholder="Tên đội, ID hoặc tên ingame…"><small id="teamSearchSummary" role="status"></small></div><div id="teamList" class="team-admin-list"><div class="empty-state">Chọn một custom để xem danh sách team.</div></div>
           </div>
 
           <div class="panel import-panel">

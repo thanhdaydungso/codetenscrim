@@ -24,13 +24,16 @@ function showNotice(message, type = 'ok', html = false) {
 }
 
 async function api(path, options = {}) {
-  const response = await fetch(path, { ...options, headers: { 'Content-Type': 'application/json', ...(options.headers || {}) } });
-  const result = await response.json();
-  if (!response.ok || !result.success) {
-    const detail = result.errors?.length ? ` ${result.errors.join(' ')}` : '';
-    throw new Error((result.message || 'Yêu cầu thất bại.') + detail);
-  }
-  return result;
+  document.dispatchEvent(new Event('ui-request-start'));
+  try {
+    const response = await fetch(path, { ...options, headers: { 'Content-Type': 'application/json', ...(options.headers || {}) } });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      const detail = result.errors?.length ? ` ${result.errors.join(' ')}` : '';
+      throw new Error((result.message || 'Yêu cầu thất bại.') + detail);
+    }
+    return result;
+  } finally { document.dispatchEvent(new Event('ui-request-end')); }
 }
 
 function addMember(player = {}) {
@@ -39,8 +42,8 @@ function addMember(player = {}) {
   row.className = 'member-row';
   row.innerHTML = `
     <span class="member-number">${memberList.children.length + 1}</span>
-    <div class="field"><label>ID GAME *</label><input class="player-id" inputmode="numeric" autocomplete="off" placeholder="992836236" value="${escapeHtml(player.playerId || '')}"></div>
-    <div class="field"><label>TÊN INGAME *</label><input class="player-name" maxlength="50" autocomplete="off" placeholder="NVT.KHADA" value="${escapeHtml(player.playerName || '')}"></div>
+    <div class="field"><label>ID GAME *</label><input class="player-id" aria-label="ID game" inputmode="numeric" autocomplete="off" placeholder="992836236" value="${escapeHtml(player.playerId || '')}"></div>
+    <div class="field"><label>TÊN INGAME *</label><input class="player-name" aria-label="Tên ingame" maxlength="50" autocomplete="off" placeholder="NVT.KHADA" value="${escapeHtml(player.playerName || '')}"></div>
     <button class="icon-button remove-member" type="button" aria-label="Xóa thành viên">×</button>`;
   memberList.appendChild(row);
   renumber();
@@ -48,6 +51,7 @@ function addMember(player = {}) {
 
 function renumber() {
   [...memberList.children].forEach((row, index) => { row.querySelector('.member-number').textContent = index + 1; });
+  $('#memberLimit').textContent = memberList.children.length + ' / ' + config.maxPlayersPerTeam + ' thành viên';
   $('#addMember').disabled = memberList.children.length >= config.maxPlayersPerTeam;
 }
 
@@ -194,3 +198,10 @@ $('#loadEdit').addEventListener('click', loadEdit);
     }
   } catch (error) { showNotice(error.message, 'bad'); }
 })();
+
+$('#copyEditToken').addEventListener('click', async () => {
+  const token = $('#editToken').value.trim();
+  if (!/^[a-f0-9]{48}$/.test(token)) return showNotice('Chưa có mã chỉnh sửa hợp lệ để sao chép.', 'bad');
+  try { await navigator.clipboard.writeText(token); showNotice('Đã sao chép mã chỉnh sửa.'); }
+  catch { $('#editToken').focus(); $('#editToken').select(); showNotice('Hãy nhấn Ctrl+C để sao chép mã đã chọn.'); }
+});
