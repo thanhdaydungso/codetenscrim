@@ -836,6 +836,7 @@ function serveLogo(req, res, url) {
     '/logo/index.html': 'index.html',
     '/logo/style.css': 'style.css',
     '/logo/script.js': 'script.js',
+    '/logo/custom-picker.js': 'custom-picker.js',
     '/logo/logo-bundle.js': 'logo-bundle.js',
     '/logo/avatars_b64.js': 'avatars_b64.js',
     ...Object.fromEntries(["Andrew","Kelly","Olivia","Ford","Nikita","Misha","Maxim","Kla","Paloma","Miguel","Caroline","Antonio","NgoKhong","Moco","Hayato"].map(name => ['/logo/avatars/' + name + '.png', 'avatars/' + name + '.png']))

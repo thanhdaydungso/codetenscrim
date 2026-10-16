@@ -368,6 +368,7 @@ $('files').onchange=e=>upload(Array.from(e.target.files));
 ['dragleave','drop'].forEach(event=>$('dropZone').addEventListener(event,e=>{e.preventDefault();$('dropZone').classList.remove('over');if(event==='drop')upload(Array.from(e.dataTransfer.files));}));
 window.addEventListener('dragover',e=>e.preventDefault());window.addEventListener('drop',e=>e.preventDefault());
 $('previewSelect').onchange=preview;
+document.addEventListener('logo-custom-change', render);
 $('download').onclick=download;$('copyTable').onclick=copyTableImage;render();
 
 
@@ -445,26 +446,3 @@ $('savePng').onclick=()=>{
 };
 syncEditor();
 }
-async function loadPlaynameCustoms() {
-  try {
-    const response = await fetch('/api/admin/customs', { credentials: 'same-origin', cache: 'no-store' });
-    const result = await response.json();
-    if (!response.ok || !result.success) throw new Error(result.message || 'Không tải được custom.');
-    const select = $('playnameCustom');
-    select.replaceChildren(new Option('Chọn custom playname', ''));
-    for (const custom of result.data) select.add(new Option(custom.name + ' (' + custom.playerCount + ' player)', custom.id));
-    select.onchange = () => {
-      $('customChoice').textContent = select.value ? 'Xuất kèm: ' + select.selectedOptions[0].textContent : 'Chưa chọn custom xuất kèm.';
-      render();
-    };
-    render();
-  } catch (error) { tell(error.message); }
-}
-loadPlaynameCustoms();
-
-$('pickCustom').onclick = () => {
-  const picker = $('customPicker');
-  picker.hidden = !picker.hidden;
-  $('pickCustom').setAttribute('aria-expanded', String(!picker.hidden));
-  if (!picker.hidden) $('playnameCustom').focus();
-};
