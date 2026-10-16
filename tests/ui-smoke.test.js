@@ -33,7 +33,7 @@ async function freePort(){return new Promise(resolve=>{const s=net.createServer(
     async function screenshot(name){await delay(800);const shot=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});fs.writeFileSync(path.join(temp,name+'.png'),Buffer.from(shot.data,'base64'));}
     async function fits(){assert(await evaluate('document.documentElement.scrollWidth <= innerWidth + 1'),'Horizontal overflow at '+await evaluate('location.pathname'));}
     await size(1440,1000);await go('/','document.querySelectorAll(".custom-card").length===2');await fits();await screenshot('home-desktop');
-    assert(await evaluate('getComputedStyle(document.querySelector(".hero h1")).fontStyle')==='normal');
+    assert(await evaluate('document.querySelector(".hero h1") === null'),'Removed hero headline is still visible');
     assert.equal(await evaluate('getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()'),'#dbfd85');
     assert(await evaluate('!document.querySelector(".hero-guide") && !!document.querySelector("#heroSculpture")'));
     await evaluate('document.querySelector("#customDirectory").scrollIntoView({behavior:"instant"})');await screenshot('directory-desktop');
