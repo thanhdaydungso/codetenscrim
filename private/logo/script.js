@@ -3,6 +3,7 @@ const $ = id => document.getElementById(id);
 let teams = [], logos = [], busy = false, uploading = false;
 let manualAssignments = [];
 let customDefaultLogo = null;
+let borderColor = null;
 function fallbackLogo() { return customDefaultLogo || flagLogo(); }
 function fallbackName() { return customDefaultLogo ? 'Logo ' + (logos.indexOf(customDefaultLogo) + 1) + ' mặc định' : 'Cờ Việt Nam mặc định'; }
 const SIZE = 1000;
@@ -160,6 +161,7 @@ function render() {
   $('download').disabled = !teams.length || !$('playnameCustom').value || busy || uploading;
   $('playnameCustom').disabled = busy || uploading;
   $('pickCustom').disabled = busy || uploading;
+  $('borderColor').disabled = $('goldBorder').disabled = busy || uploading;
   $('copyTable').disabled = !teams.length || busy || uploading;
   ['replace','append','reset','files'].forEach(id => $(id).disabled = busy || (id === 'files' && uploading));
 
@@ -220,18 +222,18 @@ function draw(canvas, logo) {
   gold.addColorStop(0.58, '#F6E66B');
   gold.addColorStop(0.8, '#DDB12C');
   gold.addColorStop(1, '#B77B0C');
-  ctx.strokeStyle = gold;
+  ctx.strokeStyle = borderColor || gold;
   ctx.lineWidth = borderWidth;
   ctx.stroke();
   // Fine outlines remain within the 50px ring.
   ctx.beginPath();
   ctx.arc(center, center, center - 1.5, 0, Math.PI * 2);
-  ctx.strokeStyle = '#9B722B';
+  ctx.strokeStyle = borderColor || '#9B722B';
   ctx.lineWidth = 3;
   ctx.stroke();
   ctx.beginPath();
   ctx.arc(center, center, center - borderWidth + 1, 0, Math.PI * 2);
-  ctx.strokeStyle = '#695020';
+  ctx.strokeStyle = borderColor || '#695020';
   ctx.lineWidth = 2;
   ctx.stroke();
 }
@@ -375,6 +377,15 @@ $('files').onchange=e=>upload(Array.from(e.target.files));
 ['dragenter','dragover'].forEach(event=>$('dropZone').addEventListener(event,e=>{e.preventDefault();$('dropZone').classList.add('over');}));
 ['dragleave','drop'].forEach(event=>$('dropZone').addEventListener(event,e=>{e.preventDefault();$('dropZone').classList.remove('over');if(event==='drop')upload(Array.from(e.dataTransfer.files));}));
 window.addEventListener('dragover',e=>e.preventDefault());window.addEventListener('drop',e=>e.preventDefault());
+function updateBorder(color) {
+  if (busy || uploading) return;
+  borderColor = color;
+  logos.forEach(logo => delete logo.avatarPreview);
+  if (defaultFlagLogo) delete defaultFlagLogo.avatarPreview;
+  render();
+}
+$('borderColor').oninput=()=>updateBorder($('borderColor').value);
+$('goldBorder').onclick=()=>{if(busy||uploading)return;$('borderColor').value='#e5b936';updateBorder(null);};
 $('defaultLogoSelect').onchange=()=>{if(busy||uploading)return;customDefaultLogo=logos[Number($('defaultLogoSelect').value)] || null;render();tell('Đã chọn ' + fallbackName() + ' cho các đội chưa gán logo.');};
 $('previewSelect').onchange=preview;
 document.addEventListener('logo-custom-change', render);
