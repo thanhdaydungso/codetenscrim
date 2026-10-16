@@ -217,6 +217,39 @@ async function run() {
   assert(output.body.TeamRegionList.every(item => item.TeamRegion === 'CUSTOM MỚI'), 'Restart server làm mất TeamRegion mới.');
   const migratedTeams = JSON.parse(fs.readFileSync(storedTeamsFile, 'utf8'));
   assert(migratedTeams.find(team => team.id === submissionId).status === 'approved', 'Dữ liệu pending cũ chưa được tự động chuyển sang đã lưu.');
+
+  // A manual team reset must retain every custom and its settings.
+  const beforeReset = fs.readFileSync(customsFile, 'utf8');
+  await admin('/api/admin/customs/HV/teams', cookie, { method: 'DELETE' });
+  assert(fs.readFileSync(customsFile, 'utf8') === beforeReset, 'Manual reset changed custom definitions');
+  assert((await exportCustom('HV', cookie)).body.PlayerNameList.length === 0, 'Manual reset kept HV players');
+  assert((await exportCustom('MP', cookie)).body.PlayerNameList.length > 0, 'Manual reset cleared another custom');
+
+  // Trigger the real daily callback without waiting until 04:00.
+  await stopServer();
+  const source = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
+  let dailyCallback;
+  const context = {
+    Date, Math, console: { log() {}, error(message) { throw new Error(message); } },
+    nextVietnamReset, TEAM_FILE: storedTeamsFile,
+    withWriteLock: action => action(), backupFiles: async () => {},
+    writeJsonAtomic: async (file, value) => fs.writeFileSync(file, JSON.stringify(value)),
+    setTimeout: callback => { dailyCallback = callback; }
+  };
+  require('vm').runInNewContext(source.slice(source.indexOf('function scheduleDailyReset()'), source.indexOf('ensureStorage().then(')) + '\nscheduleDailyReset();', context);
+  await dailyCallback();
+  assert(JSON.parse(fs.readFileSync(storedTeamsFile, 'utf8')).length === 0, 'Daily reset kept team/player data');
+  assert(fs.readFileSync(customsFile, 'utf8') === beforeReset, 'Daily reset changed custom definitions');
+  await startServer();
+  cookie = await login();
+  const afterReset = await request('/api/customs');
+  assert(afterReset.body.data.some(custom => custom.id === 'NEW'), 'Added custom disappeared after reset/restart');
+  assert(afterReset.body.data.find(custom => custom.id === 'HV').color === '#123456', 'Custom settings disappeared after reset');
+  await admin('/api/admin/customs/NEW', cookie, { method: 'DELETE' });
+  await stopServer();
+  await startServer();
+  assert(!(await request('/api/customs')).body.data.some(custom => custom.id === 'NEW'), 'Explicitly deleted custom reappeared');
+
 }
 
 (async () => {

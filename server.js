@@ -817,7 +817,7 @@ async function handleAdminApi(req, res, url, cfg) {
       const latest = readJson(TEAM_FILE, []);
       await backupFiles(`clear-custom-${id}`);
       await writeJsonAtomic(TEAM_FILE, latest.filter(team => team.customId !== id));
-      return apiSuccess(res, 200, 'Đã xóa dữ liệu custom và tạo bản sao lưu.');
+      return apiSuccess(res, 200, 'Đã RS team/player. Giữ nguyên custom và cấu hình; đã tạo bản sao lưu.');
     });
   }
 
@@ -877,7 +877,7 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-// Scheduler tự động reset toàn bộ submissions lúc 4:00 sáng mỗi ngày
+// Reset team/player lúc 4:00 sáng; giữ nguyên customs.json và cấu hình custom.
 function scheduleDailyReset() {
   const now = new Date();
   const next4am = nextVietnamReset(now);
@@ -888,7 +888,7 @@ function scheduleDailyReset() {
       await withWriteLock(async () => {
         await backupFiles('auto-reset-4am');
         await writeJsonAtomic(TEAM_FILE, []);
-        console.log(`[Reset] Đã xóa toàn bộ submissions lúc ${new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}`);
+        console.log(`[Reset] Đã RS team/player (giữ nguyên danh sách custom) lúc ${new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}`);
       });
     } catch (error) {
       console.error('[Reset] Lỗi khi reset submissions:', error.message);

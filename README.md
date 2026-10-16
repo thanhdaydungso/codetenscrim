@@ -45,3 +45,5 @@ Mỗi lần BTC tải `PlayerNameOverwrite.json`, backend chờ các thao tác g
 Team gửi hoặc cập nhật code tên được tự động lưu với trạng thái `approved`, không cần BTC duyệt thủ công, và được đưa vào lần export kế tiếp. API sẽ chặn tải khi PlayerID không hợp lệ, vượt `Number.MAX_SAFE_INTEGER` hoặc thuộc nhiều team. Trang BTC hiển thị thời gian đồng bộ, số team/player, số xung đột và bản xem trước dữ liệu.
 
 Định dạng game chỉ có 15 `TeamID`, vì vậy `export-all` chỉ tạo file khi dữ liệu đã lưu thuộc đúng một custom. Nếu có nhiều custom, BTC phải chọn từng custom để tránh tạo `TeamID` trùng trong cùng file.
+
+Reset lúc 04:00 giờ Việt Nam chỉ xóa team/player trong `submissions.json`. Danh sách custom, tên, màu, TeamRegion và trạng thái khóa trong `customs.json` được giữ nguyên, kể cả custom do BTC thêm. Nút RS team/player của một custom cũng giữ lại custom đó. Chỉ thao tác xóa custom mới xóa custom khỏi danh sách.

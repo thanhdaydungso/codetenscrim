@@ -352,7 +352,7 @@ async function download(path) {
 $('#exportCustom').addEventListener('click', () => download(`/api/admin/export/${encodeURIComponent(selectedId)}`).catch(error => showNotice(error.message, 'bad')));
 $('#exportAll').addEventListener('click', () => download('/api/admin/export-all').catch(error => showNotice(error.message, 'bad')));
 $('#clearCustom').addEventListener('click', async () => {
-  if (!selectedId || !confirm(`Xóa toàn bộ team trong custom ${selectedId}? Dữ liệu sẽ được sao lưu trước.`)) return;
+  if (!selectedId || !confirm(`RS team/player trong custom ${selectedId}? Danh sách custom và cấu hình được giữ nguyên. Dữ liệu sẽ được sao lưu trước.`)) return;
   try { const result = await api(`/api/admin/customs/${encodeURIComponent(selectedId)}/teams`, { method: 'DELETE' }); await loadCustoms(); showNotice(result.message); }
   catch (error) { showNotice(error.message, 'bad'); }
 });
