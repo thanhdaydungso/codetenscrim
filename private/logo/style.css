@@ -53,9 +53,9 @@
 .logo-page #previewName { margin: 6px 0; font-size: 12px; }
 .logo-page .badge { font-size: 8px; padding: 4px 6px; }
 .logo-page h3 { margin: 12px 0 8px; font-size: 13px; }
-.logo-page .logo-tray { grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 6px; max-height: 220px; margin: 8px 0; }
+.logo-page .logo-tray { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; max-height: 440px; margin: 8px 0; }
 .logo-page .logo-card { padding: 6px; }
-.logo-page .logo-card img { width: 40px; height: 40px; }
+.logo-page .logo-card img { width: 120px; height: 120px; max-width: 100%; }
 .logo-page .logo-card span { font-size: 10px; }
 .logo-page .warning { padding: 6px 8px; font-size: 10px; margin: 8px 0; background: rgba(242,195,124,.08); border-radius: 6px; }
 .logo-page #status { font-size: 11px; margin-bottom: 0; }
