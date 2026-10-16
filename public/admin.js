@@ -152,7 +152,7 @@ function renderSync() {
   ];
   $('#syncIssues').innerHTML = issues.length
     ? `<b>CHƯA THỂ XUẤT FILE</b>${issues.map(issue => `<div>${escapeHtml(issue)}</div>`).join('')}`
-    : '<span>Dữ liệu hợp lệ và sẵn sàng tải xuống.</span>';
+    : '';
   const players = exportState.players || [];
   $('#exportPreview').innerHTML = players.length ? `
     <div class="export-preview-head"><span>PLAYER ID</span><span>TÊN HIỂN THỊ</span><span>PLAYER NATION</span><span>COLOR</span></div>

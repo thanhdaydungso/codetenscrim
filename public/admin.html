@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Bảng điều khiển BTC</title>
   <link rel="stylesheet" href="/styles.css">
-<link rel="stylesheet" href="/ui.css?v=20261017-5"><script src="/ui.js?v=20261017-5" defer></script></head>
+<link rel="stylesheet" href="/ui.css?v=20261017-6"><script src="/ui.js?v=20261017-6" defer></script></head>
 <body>
   <header class="site-header">
     <div class="container header-inner">
-      <a class="brand" href="/"><span class="brand-mark">FF</span><span><b>CỔNG QUẢN LÝ CODE</b><small>Ban tổ chức giải đấu</small></span></a>
+      <a class="brand" href="/"><span class="brand-mark">FF</span><span><b>CỔNG QUẢN LÝ CODE</b></span></a>
       <div class="nav-actions"><div id="adminCodeMenu" hidden><details class="code-menu"><summary aria-label="Mở menu chức năng"><span class="hamburger" aria-hidden="true"><i></i><i></i><i></i></span></summary><nav class="code-menu-items" aria-label="Chức năng"><a href="/admin">Code tên</a><a href="/logo/">Code logo</a></nav></details></div><a class="button secondary" href="/">TRANG CHỦ</a><button id="logoutButton" class="button danger" type="button" hidden>ĐĂNG XUẤT</button></div>
     </div>
   </header>
@@ -19,7 +19,7 @@
       <div class="panel login-panel">
         <span class="eyebrow">KHU VỰC BẢO MẬT</span>
         <h1>BTC ĐĂNG NHẬP</h1>
-        <p class="muted">Đăng nhập để quản lý custom, đội hình và xuất dữ liệu giải đấu.</p>
+
         <div id="loginNotice" class="notice" role="status"></div>
         <form id="loginForm">
           <div class="field"><label for="adminPassword">MẬT KHẨU QUẢN TRỊ</label><div class="password-field"><input id="adminPassword" type="password" autocomplete="current-password" required><button id="togglePassword" class="icon-button" type="button" aria-label="Hiện mật khẩu">◉</button></div></div>
@@ -36,7 +36,7 @@
         <div class="stat"><b>0</b><span>Custom</span></div><div class="stat"><b>0</b><span>Tổng đội</span></div><div class="stat"><b>0</b><span>Đã lưu</span></div><div class="stat"><b>0</b><span>Người chơi</span></div>
       </div>
 
-      <p class="schedule-note"><span class="sync-dot" aria-hidden="true"></span>Tự RS team/player lúc 04:00 giờ Việt Nam, 1 lần/ngày. Danh sách và cấu hình custom được giữ nguyên.</p><div class="admin-layout">
+      <div class="admin-layout">
         <aside class="panel custom-sidebar">
           <div class="panel-head"><div><span class="step">01</span><h2>DANH SÁCH CUSTOM</h2></div></div>
           <form id="addCustomForm" class="add-custom-form">
@@ -71,7 +71,7 @@
           <div class="panel import-panel">
             <div class="panel-head"><div><span class="step">03</span><h2>NẠP NHIỀU TEAM</h2></div></div>
             <div class="panel-body">
-              <p class="muted">Mỗi dòng là một team: tên team đứng trước ID đầu tiên, sau mỗi ID là tên ingame.</p>
+
               <textarea id="bulkInput" spellcheck="false" placeholder="PTE 3975285885 FS Snaw 3200451115 TG vanbinn&#10;AWE 10253674281 chuoichien 1004978813 krime"></textarea>
               <div class="actions"><button id="parseBulk" class="button secondary">ĐỌC DANH SÁCH GIẢI</button><button id="importBulk" class="button primary" disabled>NẠP NHIỀU TEAM</button></div>
               <div id="bulkErrors" class="parse-errors"></div>

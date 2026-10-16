@@ -30,10 +30,14 @@ async function freePort(){return new Promise(resolve=>{const s=net.createServer(
     await send('Runtime.enable');await send('Page.enable');
     async function size(width,height){await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<600});}
     async function go(route,ready){await send('Page.navigate',{url:base+route});await until(()=>evaluate('location.pathname === '+JSON.stringify(route)+' && !!('+ready+')'),'page '+route);await delay(250);}
-    async function screenshot(name){const shot=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});fs.writeFileSync(path.join(temp,name+'.png'),Buffer.from(shot.data,'base64'));}
+    async function screenshot(name){await delay(800);const shot=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});fs.writeFileSync(path.join(temp,name+'.png'),Buffer.from(shot.data,'base64'));}
     async function fits(){assert(await evaluate('document.documentElement.scrollWidth <= innerWidth + 1'),'Horizontal overflow at '+await evaluate('location.pathname'));}
     await size(1440,1000);await go('/','document.querySelectorAll(".custom-card").length===2');await fits();await screenshot('home-desktop');
     assert(await evaluate('getComputedStyle(document.querySelector(".hero h1")).fontStyle')==='normal');
+    assert.equal(await evaluate('getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()'),'#dbfd85');
+    assert(await evaluate('!document.querySelector(".hero-guide") && !!document.querySelector("#heroSculpture")'));
+    await evaluate('document.querySelector("#customDirectory").scrollIntoView({behavior:"instant"})');await screenshot('directory-desktop');
+    await evaluate('scrollTo({top:0,behavior:"instant"})');
     await evaluate('document.querySelector("#customSearch").value="mp";document.querySelector("#customSearch").dispatchEvent(new Event("input"));');assert.equal(await evaluate('document.querySelectorAll(".custom-card").length'),1);
     await evaluate('document.querySelector("[data-status-filter=locked]").click()');assert(await evaluate('document.querySelector(".empty-state").textContent.includes("Không tìm")'));
     await size(390,844);await go('/','document.querySelectorAll(".custom-card").length===2');await fits();await screenshot('home-mobile');
@@ -50,6 +54,10 @@ async function freePort(){return new Promise(resolve=>{const s=net.createServer(
     await evaluate('document.querySelector("#teamInput").value="1 UI TEAM";document.querySelector("#replace").click();document.querySelector("#borderColor").value="#ff0000";document.querySelector("#borderColor").dispatchEvent(new Event("input"));');assert.equal(await evaluate('document.querySelectorAll("#roster tr").length'),1);
     await size(390,844);await fits();await screenshot('logo-mobile');
     await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});assert.equal(await evaluate('getComputedStyle(document.querySelector("main")).animationName'),'none');
+    await go('/','document.querySelectorAll(".custom-card").length===2');
+    const still=await evaluate('document.querySelector("#heroSculpture").toDataURL()');
+    await delay(180);
+    assert.equal(await evaluate('document.querySelector("#heroSculpture").toDataURL()'),still,'Sculpture moved with reduced motion enabled');
     assert.deepEqual(errors,[],'Browser runtime errors');
     console.log('PASS UI: desktop/mobile home, search/filter, registration, admin login/team search, MP white, logo border, reduced motion.');
     console.log('Screenshots: '+temp);

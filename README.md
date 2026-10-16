@@ -55,3 +55,5 @@ Giao diện chung nằm trong `public/ui.css` và `public/ui.js`, dùng cho tran
 Chạy `npm test` để kiểm tra xuất dữ liệu, reset và migration. Chạy `npm run test:ui` để kiểm tra desktop/mobile bằng Chrome hoặc Edge; đặt `UI_BROWSER` tới đường dẫn Chromium khi cần. Ảnh kiểm tra được lưu trong thư mục tạm, đường dẫn hiển thị sau khi chạy.
 
 Custom MP được chuyển sang trắng `#FFFFFF` một lần khi nâng cấp (cờ `mpWhiteDefaultV2`). Những lần đổi màu sau đó của BTC được giữ nguyên qua các lần khởi động lại.
+
+Giao diện dùng nền than đen, trắng giấy và điểm nhấn xanh chanh, tham khảo hướng thiết kế Room & Pillar. Hình khối ở trang chủ được dựng bằng canvas, tự dừng khi ra ngoài màn hình hoặc bật giảm chuyển động. Các đoạn giới thiệu và hướng dẫn dài đã được lược bỏ; thông báo lỗi, trạng thái và nhãn thao tác vẫn được giữ.

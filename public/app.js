@@ -42,7 +42,6 @@ function render(customs) {
       <span class="custom-glow" style="--custom-color:${escapeHtml(custom.color)}"></span>
       <span class="slot-label">CUSTOM MATCH</span>
       <strong>${escapeHtml(custom.name)}</strong>
-      <span class="custom-description">THAM GIA CUSTOM ${escapeHtml(custom.name)}</span>
       <span class="capacity"><i style="width:${Math.min(100, custom.teamCount / custom.capacity * 100)}%;--custom-color:${escapeHtml(custom.color)}"></i></span>
       <span class="custom-meta"><b>${custom.teamCount}/${custom.capacity} đội</b><em class="status ${custom.status}">${labels[custom.status]}</em></span>`;
     return disabled
