@@ -5,7 +5,7 @@ let manualAssignments = [];
 let customDefaultLogo = null;
 let borderColor = null;
 function fallbackLogo() { return customDefaultLogo || flagLogo(); }
-function fallbackName() { return customDefaultLogo ? 'Logo ' + (logos.indexOf(customDefaultLogo) + 1) + ' mặc định' : 'Cờ Việt Nam mặc định'; }
+function fallbackName() { return customDefaultLogo ? customDefaultLogo.name : 'C\u1edd Vi\u1ec7t Nam m\u1eb7c \u0111\u1ecbnh'; }
 const SIZE = 1000;
 const AVATAR_ORDER = [
   {name:'Andrew', id:902000006, file:'Andrew'},
@@ -169,15 +169,11 @@ function render() {
   if (count < teams.length) warnings.push(`${teams.length - count} team ${"sử dụng " + fallbackName()}.`);
   if (logos.length) {
 
-    const used = new Set(matched.map(p => p.logo).filter(logo => !logo.isFallback));
+    const used = new Set(matched.map(p => p.logo).filter(logo => logos.includes(logo)));
     if (used.size < logos.length) warnings.push(`${logos.length - used.size} logo không được sử dụng.`);
   }
   $('matchWarning').textContent = warnings.join(' ');
-  const defaultSelect = $('defaultLogoSelect');
-  defaultSelect.replaceChildren(new Option('Cờ Việt Nam', '-1'));
-  logos.forEach((logo, index) => defaultSelect.add(new Option('Logo ' + (index + 1) + (logo.name ? ' - ' + logo.name : ''), String(index))));
-  defaultSelect.value = String(logos.indexOf(customDefaultLogo));
-  defaultSelect.disabled = busy || uploading;
+  ['uploadDefaultLogo','resetDefaultLogo','defaultLogoFile'].forEach(id => $(id).disabled = busy || uploading);
   const selected = $('previewSelect').value;
   $('previewSelect').replaceChildren();
   logos.forEach((logo, i) => { const option = document.createElement('option'); option.value = String(i); option.textContent = 'Logo ' + (i + 1); $('previewSelect').append(option); });
@@ -372,7 +368,7 @@ async function copyTableImage() {
 
 $('replace').onclick=()=>{if(busy)return;const parsed=parseRoster($('teamInput').value);if(!parsed.length){tell('Hãy nhập ít nhất một team.');return;}teams=parsed;manualAssignments=[];render();tell(`Đã nhập ${teams.length} team.`);};
 $('append').onclick=()=>{if(busy)return;const parsed=parseRoster($('teamInput').value);teams.push(...parsed);render();tell(`Đã thêm ${parsed.length} team.`);};
-$('reset').onclick=()=>{if(busy||uploading)return;logos.forEach(l=>{URL.revokeObjectURL(l.url);if(l.background)URL.revokeObjectURL(l.background.url);});teams=[];logos=[];manualAssignments=[];customDefaultLogo=null;$('teamInput').value='';render();tell('Đã xóa bảng và logo.');};
+$('reset').onclick=()=>{if(busy||uploading)return;logos.forEach(l=>{URL.revokeObjectURL(l.url);if(l.background)URL.revokeObjectURL(l.background.url);});teams=[];logos=[];manualAssignments=[];clearDefaultLogo();$('teamInput').value='';render();tell('Đã xóa bảng và logo.');};
 $('files').onchange=e=>upload(Array.from(e.target.files));
 ['dragenter','dragover'].forEach(event=>$('dropZone').addEventListener(event,e=>{e.preventDefault();$('dropZone').classList.add('over');}));
 ['dragleave','drop'].forEach(event=>$('dropZone').addEventListener(event,e=>{e.preventDefault();$('dropZone').classList.remove('over');if(event==='drop')upload(Array.from(e.dataTransfer.files));}));
@@ -382,11 +378,27 @@ function updateBorder(color) {
   borderColor = color;
   logos.forEach(logo => delete logo.avatarPreview);
   if (defaultFlagLogo) delete defaultFlagLogo.avatarPreview;
+  if (customDefaultLogo) delete customDefaultLogo.avatarPreview;
   render();
 }
 $('borderColor').oninput=()=>updateBorder($('borderColor').value);
 $('goldBorder').onclick=()=>{if(busy||uploading)return;$('borderColor').value='#e5b936';updateBorder(null);};
-$('defaultLogoSelect').onchange=()=>{if(busy||uploading)return;customDefaultLogo=logos[Number($('defaultLogoSelect').value)] || null;render();tell('Đã chọn ' + fallbackName() + ' cho các đội chưa gán logo.');};
+function clearDefaultLogo() {
+  if (customDefaultLogo) URL.revokeObjectURL(customDefaultLogo.url);
+  customDefaultLogo = null;
+}
+$('uploadDefaultLogo').onclick=()=>{if(!busy&&!uploading)$('defaultLogoFile').click();};
+$('resetDefaultLogo').onclick=()=>{if(busy||uploading)return;clearDefaultLogo();$('defaultLogoFile').value='';render();};
+$('defaultLogoFile').onchange=async e=>{
+  const file=e.target.files[0];if(!file||busy||uploading)return;
+  uploading=true;render();let url;
+  try {
+    if(!['image/png','image/jpeg','image/webp'].includes(file.type))throw new Error('Invalid image format.');
+    url=URL.createObjectURL(file);const img=new Image();img.src=url;await img.decode();
+    clearDefaultLogo();customDefaultLogo={url,img,name:file.name};url=null;
+  } catch(error) {tell(error.message);}
+  finally {if(url)URL.revokeObjectURL(url);uploading=false;e.target.value='';render();}
+};
 $('previewSelect').onchange=preview;
 document.addEventListener('logo-custom-change', render);
 $('download').onclick=download;$('copyTable').onclick=copyTableImage;render();
