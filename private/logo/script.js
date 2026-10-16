@@ -2,6 +2,9 @@
 const $ = id => document.getElementById(id);
 let teams = [], logos = [], busy = false, uploading = false;
 let manualAssignments = [];
+let customDefaultLogo = null;
+function fallbackLogo() { return customDefaultLogo || flagLogo(); }
+function fallbackName() { return customDefaultLogo ? 'Logo ' + (logos.indexOf(customDefaultLogo) + 1) + ' mặc định' : 'Cờ Việt Nam mặc định'; }
 const SIZE = 1000;
 const AVATAR_ORDER = [
   {name:'Andrew', id:902000006, file:'Andrew'},
@@ -56,7 +59,7 @@ function flagLogo() {
   return defaultFlagLogo;
 }
 function pairs() {
-  return teams.map((team, index) => ({team, index, avatar:avatarFor(index), logo:manualAssignments[index] || flagLogo()}));
+  return teams.map((team, index) => ({team, index, avatar:avatarFor(index), logo:manualAssignments[index] || fallbackLogo()}));
 }
 
 function assignManual(teamIndex, logoIndex) {
@@ -66,7 +69,7 @@ function assignManual(teamIndex, logoIndex) {
   if (logo) manualAssignments = manualAssignments.map(item => item === logo ? null : item);
   manualAssignments[teamIndex] = logo;
   render();
-  tell(teams[teamIndex].name + ': ' + (logo ? 'Logo ' + (logos.indexOf(logo) + 1) : 'Cờ Việt Nam mặc định'));
+  tell(teams[teamIndex].name + ': ' + (logo ? 'Logo ' + (logos.indexOf(logo) + 1) : fallbackName()));
 }
 function enableLogoDrop(cell, teamIndex) {
   cell.classList.add('logo-target');
@@ -132,17 +135,17 @@ function render() {
       enableLogoDrop(logoCell, index); enableLogoDrop(avatarCell, index);
       const select = document.createElement('select');
       select.className = 'manual-logo-select'; select.setAttribute('aria-label', 'Logo: ' + team.name);
-      const fallback = document.createElement('option'); fallback.value = '-1'; fallback.textContent = 'Cờ Việt Nam'; select.append(fallback);
+      const fallback = document.createElement('option'); fallback.value = '-1'; fallback.textContent = fallbackName(); select.append(fallback);
       logos.forEach((item, logoIndex) => {
         if (assignedLogos.has(item) && item !== logo) return;
         const option = document.createElement('option'); option.value = String(logoIndex); option.textContent = 'Logo ' + (logoIndex + 1); select.append(option);
       });
-      select.value = String(logos.indexOf(logo)); select.disabled = busy || uploading;
+      select.value = manualAssignments[index] ? String(logos.indexOf(logo)) : '-1'; select.disabled = busy || uploading;
       select.onchange = () => assignManual(index, Number(select.value));
       const controls = document.createElement('div'); controls.className = 'logo-controls';
       const remove = document.createElement('button'); remove.type = 'button'; remove.textContent = 'Gỡ';
       remove.className = 'remove-logo'; remove.setAttribute('aria-label', 'Gỡ logo: ' + team.name);
-      remove.disabled = logo.isFallback || busy || uploading;
+      remove.disabled = !manualAssignments[index] || busy || uploading;
       remove.onclick = () => assignManual(index, -1);
       controls.append(select, remove); logoCell.append(controls);
     }
@@ -152,7 +155,7 @@ function render() {
     row.append(num, info, logoCell, avatarCell, character); $('roster').append(row);
   });
   $('empty').hidden = teams.length > 0;
-  const count = matched.filter(p => !p.logo.isFallback).length;
+  const count = matched.filter(p => manualAssignments[p.index]).length;
   $('stats').textContent = `${teams.length} team · ${logos.length} logo · ${count} đã ghép`;
   $('download').disabled = !teams.length || !$('playnameCustom').value || busy || uploading;
   $('playnameCustom').disabled = busy || uploading;
@@ -161,13 +164,18 @@ function render() {
   ['replace','append','reset','files'].forEach(id => $(id).disabled = busy || (id === 'files' && uploading));
 
   const warnings = [];
-  if (count < teams.length) warnings.push(`${teams.length - count} team ${'sử dụng cờ Việt Nam mặc định'}.`);
+  if (count < teams.length) warnings.push(`${teams.length - count} team ${"sử dụng " + fallbackName()}.`);
   if (logos.length) {
 
     const used = new Set(matched.map(p => p.logo).filter(logo => !logo.isFallback));
     if (used.size < logos.length) warnings.push(`${logos.length - used.size} logo không được sử dụng.`);
   }
   $('matchWarning').textContent = warnings.join(' ');
+  const defaultSelect = $('defaultLogoSelect');
+  defaultSelect.replaceChildren(new Option('Cờ Việt Nam', '-1'));
+  logos.forEach((logo, index) => defaultSelect.add(new Option('Logo ' + (index + 1) + (logo.name ? ' - ' + logo.name : ''), String(index))));
+  defaultSelect.value = String(logos.indexOf(customDefaultLogo));
+  defaultSelect.disabled = busy || uploading;
   const selected = $('previewSelect').value;
   $('previewSelect').replaceChildren();
   logos.forEach((logo, i) => { const option = document.createElement('option'); option.value = String(i); option.textContent = 'Logo ' + (i + 1); $('previewSelect').append(option); });
@@ -362,11 +370,12 @@ async function copyTableImage() {
 
 $('replace').onclick=()=>{if(busy)return;const parsed=parseRoster($('teamInput').value);if(!parsed.length){tell('Hãy nhập ít nhất một team.');return;}teams=parsed;manualAssignments=[];render();tell(`Đã nhập ${teams.length} team.`);};
 $('append').onclick=()=>{if(busy)return;const parsed=parseRoster($('teamInput').value);teams.push(...parsed);render();tell(`Đã thêm ${parsed.length} team.`);};
-$('reset').onclick=()=>{if(busy||uploading)return;logos.forEach(l=>{URL.revokeObjectURL(l.url);if(l.background)URL.revokeObjectURL(l.background.url);});teams=[];logos=[];manualAssignments=[];$('teamInput').value='';render();tell('Đã xóa bảng và logo.');};
+$('reset').onclick=()=>{if(busy||uploading)return;logos.forEach(l=>{URL.revokeObjectURL(l.url);if(l.background)URL.revokeObjectURL(l.background.url);});teams=[];logos=[];manualAssignments=[];customDefaultLogo=null;$('teamInput').value='';render();tell('Đã xóa bảng và logo.');};
 $('files').onchange=e=>upload(Array.from(e.target.files));
 ['dragenter','dragover'].forEach(event=>$('dropZone').addEventListener(event,e=>{e.preventDefault();$('dropZone').classList.add('over');}));
 ['dragleave','drop'].forEach(event=>$('dropZone').addEventListener(event,e=>{e.preventDefault();$('dropZone').classList.remove('over');if(event==='drop')upload(Array.from(e.dataTransfer.files));}));
 window.addEventListener('dragover',e=>e.preventDefault());window.addEventListener('drop',e=>e.preventDefault());
+$('defaultLogoSelect').onchange=()=>{if(busy||uploading)return;customDefaultLogo=logos[Number($('defaultLogoSelect').value)] || null;render();tell('Đã chọn ' + fallbackName() + ' cho các đội chưa gán logo.');};
 $('previewSelect').onchange=preview;
 document.addEventListener('logo-custom-change', render);
 $('download').onclick=download;$('copyTable').onclick=copyTableImage;render();
