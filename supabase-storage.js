@@ -35,12 +35,16 @@ class SupabaseStorage {
       };
       const logoError=logoErrors[detail.message];
       if(logoError)throw Object.assign(new Error(logoError[1]),{status:logoError[0]});
+      const sqlCode=/^[A-Z0-9]{5,12}$/.test(detail.code||'')?detail.code:'';
+      if(sqlCode==='57014')throw Object.assign(new Error('Supabase hết thời gian xử lý bảng logo (57014). Bấm Tải danh sách để kiểm tra bản đã lưu trước khi thử lại.'),{status:504});
+      if(sqlCode==='53200'||sqlCode==='54000'||sqlCode==='54001')throw Object.assign(new Error('Supabase không đủ tài nguyên xử lý bảng ảnh ('+sqlCode+'). Hãy giảm số ảnh hoặc dung lượng ảnh trong bảng.'),{status:503});
+      if(sqlCode==='22P05')throw Object.assign(new Error('Tên đội hoặc tên bản lưu có ký tự không hợp lệ (22P05). Hãy bỏ ký tự ẩn rồi lưu lại.'),{status:400});
       const conflict = String(detail.message).includes('SCRIM_CONFLICT');
       if(name === 'scrim_logo_board' && detail.code === 'PGRST202') throw Object.assign(new Error('Chạy supabase/logo-boards.sql trong SQL Editor để bật backup logo.'),{status:503});
       const missing = detail.code === 'PGRST202' || detail.code === '42P01';
       const message = conflict ? 'Dữ liệu vừa thay đổi ở phiên khác. Hãy tải lại và thử lại.'
         : missing ? 'Chưa tạo bảng Supabase. Chạy supabase/schema.sql trong SQL Editor.'
-        : 'Supabase từ chối thao tác lưu/đọc dữ liệu (HTTP ' + response.status + ').';
+        : 'Supabase từ chối thao tác lưu/đọc dữ liệu (HTTP ' + response.status + (sqlCode?', mã '+sqlCode:'') + ').';
       throw Object.assign(new Error(message), { status: conflict ? 409 : 503 });
     }
     return text ? JSON.parse(text) : null;

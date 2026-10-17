@@ -80,6 +80,10 @@ async function start(dataDir, cloudUrl) {
     offline = true;
     await assert.rejects(db.run(() => db.read('teams')), error => error.status === 503);
     offline = false;
+    const sqlTimeout = new SupabaseStorage({url:cloudUrl,secret,fetchImpl:async()=>new Response(JSON.stringify({code:'57014',message:'statement timeout'}),{status:500})});
+    await assert.rejects(sqlTimeout.read('teams'),error=>error.status===504 && error.message.includes('57014'));
+    const sqlFailure = new SupabaseStorage({url:cloudUrl,secret,fetchImpl:async()=>new Response(JSON.stringify({code:'23505',message:secret}),{status:500})});
+    await assert.rejects(sqlFailure.read('teams'),error=>error.message.includes('23505') && !error.message.includes(secret));
     const missing = new SupabaseStorage({url: cloudUrl, secret, fetchImpl: async () => new Response(JSON.stringify({code:'PGRST202'}), {status:404})});
     await assert.rejects(missing.read('teams'), /schema.sql/);
     const broken = new SupabaseStorage({url: cloudUrl, secret, fetchImpl: async () => { throw new Error(secret); }});
