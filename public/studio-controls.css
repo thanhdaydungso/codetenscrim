@@ -1,0 +1,40 @@
+/* Reference-inspired controls for the existing admin and logo workflows. */
+:is(.admin-page,.logo-page){--control-border:#2a3144;--control-surface:#161b27}
+:is(.admin-page,.logo-page) :is(button,.button){position:relative;min-height:46px;padding:11px 20px;border-radius:14px;border:1px solid var(--control-border);background:var(--control-surface);color:#e8ecf5;font-size:14px;font-weight:500;line-height:1.4;letter-spacing:0;transition:transform .2s cubic-bezier(.3,1.5,.5,1),background .2s,border-color .2s,box-shadow .2s}
+:is(.admin-page,.logo-page) :is(button,.button):hover:not(:disabled){transform:translateY(-3px);border-color:color-mix(in srgb,var(--accent) 60%,var(--control-border));background-color:#1b2130;box-shadow:0 10px 24px -12px #000e;filter:none}
+:is(.admin-page,.logo-page) :is(button,.button):active:not(:disabled){transform:translateY(0) scale(.97)}
+:is(.admin-page,.logo-page) :is(button,.button):disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+:is(.admin-page,.logo-page) :is(button,.button):focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+:is(.admin-page,.logo-page) :is(button.primary,.button.primary,#exportCustom){overflow:hidden;background:var(--accent);border-color:transparent;color:#0a0c11;font-weight:600}
+:is(.admin-page,.logo-page) :is(button.primary,.button.primary,#exportCustom):hover:not(:disabled){background:var(--accent);border-color:transparent;box-shadow:0 12px 30px -10px color-mix(in srgb,var(--accent) 70%,transparent)}
+:is(.admin-page,.logo-page) :is(button.primary,.button.primary,#exportCustom)::after{content:'';position:absolute;top:0;left:0;width:40%;height:100%;background:linear-gradient(100deg,transparent,#ffffffa6,transparent);transform:translateX(-130%) skewX(-18deg);pointer-events:none}
+:is(.admin-page,.logo-page) :is(button.primary,.button.primary,#exportCustom):hover:not(:disabled)::after{animation:studio-shine .9s ease}
+:is(.admin-page,.logo-page) :is(button.danger,.button.danger){color:#f5afaf;background:transparent;border-color:#f5afaf40}
+:is(.admin-page,.logo-page) :is(button.danger,.button.danger):hover:not(:disabled){border-color:#ff6b6b;color:#ffb3b3}
+:is(.admin-page,.logo-page) .icon-button{width:38px;height:38px;min-width:38px;min-height:38px;padding:0;border-radius:50%;font-size:18px}
+.admin-page .custom-select{border:0;border-radius:12px;background:transparent;min-height:46px;padding:12px}
+.admin-page .custom-select:hover:not(:disabled){transform:none;box-shadow:none;background:#ffffff06}
+.admin-page .team-actions,.admin-page .actions,.logo-page .actions{gap:10px}
+.admin-page .team-actions button,.logo-page .logo-controls button,.logo-page .avatar-roster td button{min-height:34px;padding:6px 10px;border-radius:10px;font-size:12px}
+:is(.admin-page,.logo-page) :is(.panel,.login-panel){border-radius:22px;transition:border-color .3s,box-shadow .3s}
+:is(.admin-page,.logo-page) .panel:hover{border-color:#313a52;box-shadow:0 24px 60px -30px #000c}
+:is(.admin-page,.logo-page) :is(textarea,select,input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=color])){border-radius:14px;transition:border-color .2s,box-shadow .25s}
+:is(.admin-page,.logo-page) :is(input,textarea,select):focus-visible{outline:2px solid var(--accent);outline-offset:2px;box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 14%,transparent)}
+.logo-page .drop{position:relative;min-height:92px;border:0;border-radius:16px;background:linear-gradient(90deg,#dbfd858c 50%,transparent 0) 0 0/16px 1.5px repeat-x,linear-gradient(90deg,#dbfd858c 50%,transparent 0) 0 100%/16px 1.5px repeat-x,linear-gradient(0deg,#dbfd858c 50%,transparent 0) 0 0/1.5px 16px repeat-y,linear-gradient(0deg,#dbfd858c 50%,transparent 0) 100% 0/1.5px 16px repeat-y;transition:color .2s,background-color .25s,transform .25s}
+.logo-page .drop:hover,.logo-page .drop.over{color:var(--accent);background-color:#dbfd850f;transform:scale(1.015)}
+.logo-page .color-row .border-current{min-width:0;white-space:normal;border-radius:14px;background-size:200% 100%!important;overflow:hidden}
+.logo-page #goldBorder,.logo-page #resetDefaultLogo{min-width:46px;padding-inline:12px}
+.logo-page #download{min-height:58px;border-radius:16px;font-size:15px}
+:is(.admin-page,.logo-page) :is(.table-wrap,.team-editor,.export-preview,.custom-admin-card){border-radius:16px}
+.logo-page .logo-card{border-radius:14px;transition:transform .3s cubic-bezier(.3,1.7,.5,1),border-color .3s,box-shadow .3s}
+.logo-page .logo-card:hover{transform:translateY(-3px);box-shadow:0 0 0 3px #dbfd8518}
+@keyframes studio-shine{from{transform:translateX(-130%) skewX(-18deg)}to{transform:translateX(360%) skewX(-18deg)}}
+@keyframes studio-march{to{background-position:32px 0,-32px 100%,0 -32px,100% 32px}}
+@keyframes studio-pulse{0%,100%{box-shadow:0 0 0 0 #dbfd8538}50%{box-shadow:0 0 0 9px #dbfd8500}}
+@keyframes studio-row{from{opacity:.4;transform:translateX(-10px)}to{opacity:1;transform:none}}
+@keyframes studio-gradient{to{background-position:200% 50%}}
+@media(prefers-reduced-motion:no-preference){.logo-page .drop{animation:studio-march 1.4s linear infinite}.logo-page #download:not(:disabled),.admin-page #exportCustom:not(:disabled){animation:studio-pulse 2.4s ease-in-out infinite}.logo-page .color-row .border-current{animation:studio-gradient 7s linear infinite}.logo-page #roster tr,.admin-page .team-editor{animation:studio-row .45s cubic-bezier(.2,.8,.2,1) both}}
+@media(max-width:640px){:is(.admin-page,.logo-page) :is(button,.button){font-size:12px;padding:10px 14px;min-height:44px}.admin-page .nav-actions .button{font-size:9px;padding:8px 10px;min-height:36px}.logo-page .avatar-roster td button{min-height:34px;padding:6px 10px}.logo-page #download{font-size:14px;min-height:54px}}
+@media(prefers-reduced-motion:reduce){:is(.admin-page,.logo-page) *,:is(.admin-page,.logo-page) *::before,:is(.admin-page,.logo-page) *::after{animation:none!important;transition:none!important}}
+
+.logo-page .logo-main>.panel{border-radius:22px}

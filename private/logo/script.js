@@ -178,8 +178,8 @@ function borderGradient(ctx, highlight=false) {
 }
 function syncBorderPicker() {
  $('borderColor').style.background='linear-gradient('+(borderColor.angle*180/Math.PI+90)+'deg,'+borderColor.colors.join(',')+')';
- $('borderColor').textContent='Random m?u ? ? '+BORDER_STYLES[borderColor.style].name;
- $('borderColor').setAttribute('aria-label','Random m?u vi?n. Hi?n t?i: '+BORDER_STYLES[borderColor.style].name);
+ $('borderColor').textContent='Random m\u00e0u \u2726 \u00b7 '+BORDER_STYLES[borderColor.style].name;
+ $('borderColor').setAttribute('aria-label','Random m\u00e0u vi\u1ec1n. Hi\u1ec7n t\u1ea1i: '+BORDER_STYLES[borderColor.style].name);
 }
 function chooseBorder(style,random=false) {
  if(busy||uploading)return;
