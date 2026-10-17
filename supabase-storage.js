@@ -13,17 +13,20 @@ class SupabaseStorage {
   }
   run(action) { return this.context.run({}, action); }
   async rpc(name, body = {}) {
-    let response;
+    let response,text;
+    const timeout=name==='scrim_logo_board'?90_000:30_000;
     try {
       response = await this.fetch(this.url + '/rest/v1/rpc/' + name, {
         method: 'POST', headers: { apikey: this.secret, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body), signal: AbortSignal.timeout(15000)
+        body: JSON.stringify(body), signal: AbortSignal.timeout(timeout)
       });
-    } catch {
-      throw Object.assign(new Error('Không kết nối được Supabase. Dữ liệu chưa được xác nhận lưu; hãy tải lại trước khi thử lại.'), { status: 503 });
+      text=await response.text();
+    } catch (error) {
+      const timedOut=error.name==='TimeoutError'||error.name==='AbortError';
+      throw Object.assign(new Error(timedOut?'Supabase phản hồi quá chậm. Bấm Tải danh sách để kiểm tra bản lưu trước khi thử lại.':'Không kết nối được Supabase. Giữ nguyên bảng và bấm Tải danh sách để kiểm tra trước khi lưu lại.'), {status:timedOut?504:503});
     }
     if (!response.ok) {
-      const detail = await response.json().catch(() => ({}));
+      let detail;try{detail=JSON.parse(text);}catch{detail={};}
       const logoErrors = {
         LOGO_ALREADY_SENT:[409,'Bạn đã gửi logo cho bản lưu này. Mỗi người chỉ được gửi một lần.'], LOGO_BAD_SENDER:[400,'Thiếu mã người gửi.'],
         LOGO_NOT_FOUND:[404,'Bảng logo không tồn tại hoặc đã hết hạn 2 giờ.'], LOGO_CLOSED:[409,'Đã đủ logo. Link nhận logo đã khóa.'], LOGO_AUTOMATIC:[405,'Trạng thái link được điều khiển tự động.'],
@@ -40,7 +43,6 @@ class SupabaseStorage {
         : 'Supabase từ chối thao tác lưu/đọc dữ liệu (HTTP ' + response.status + ').';
       throw Object.assign(new Error(message), { status: conflict ? 409 : 503 });
     }
-    const text = await response.text();
     return text ? JSON.parse(text) : null;
   }
   validate(state) {

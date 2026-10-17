@@ -39,7 +39,10 @@ async function request(url,{cookie,body,method='GET'}={}){const response=await f
   await start(dataDir);let cookie=await login();
   let result=await request('/api/admin/logo-boards');assert.equal(result.status,401);
   result=await request('/api/admin/logo-boards',{cookie,method:'POST',body:{name:'Bảng thử',data:original}});assert.equal(result.status,201);
-  const board=result.body.data;assert.equal(board.token.length,64);assert.deepEqual(board.data,validated);
+  const board=result.body.data;assert.equal(board.token.length,64);assert.equal(board.data,undefined,'Create response should not repeat all image data');const stored=await request('/api/admin/logo-boards/'+board.id,{cookie});assert.deepEqual(stored.body.data.data,validated);
+  const requestId=crypto.randomUUID();
+  const repeated=await Promise.all([1,2].map(()=>request('/api/admin/logo-boards',{cookie,method:'POST',body:{name:'Retry-safe backup',data:original,requestId}})));
+  assert.equal(repeated[0].body.data.id,repeated[1].body.data.id,'Retry must not duplicate backup');
   const share='/api/logo-share/'+board.token;
   result=await request(share);assert.equal(result.status,200);assert.equal(result.body.data.teams[0].assigned,true);assert.equal(result.body.data.teams[1].assigned,false);
   assert(!result.body.data.data);assert(!result.body.data.logos);assert(!result.body.data.token);
@@ -49,7 +52,7 @@ async function request(url,{cookie,body,method='GET'}={}){const response=await f
   const simultaneous=await Promise.all([request(share,{method:'POST',body:{slot:1,image:largeImage}}),request(share,{method:'POST',body:{slot:1,image}})]);
   assert.deepEqual(simultaneous.map(r=>r.status).sort(),[201,409]);
   result=await request('/api/admin/logo-boards/'+board.id,{cookie});assert.equal(result.body.data.data.assignments[0],0);assert.equal(result.body.data.data.assignments[1],1);assert.equal(result.body.data.data.logos.length,2);
-  result=await request('/api/admin/logo-boards',{cookie});assert.equal(result.body.data[0].missing,1);
+  result=await request('/api/admin/logo-boards',{cookie});assert.equal(result.body.data.find(item=>item.id===board.id).missing,1);
   result=await request('/api/admin/logo-boards/'+board.id,{cookie,method:'PATCH',body:{accepting:false}});assert.equal(result.status,405);
   result=await request(share);assert.equal(result.body.data.accepting,true);
   result=await request(share,{method:'POST',body:{slot:2,image}});assert.equal(result.status,409,'One sender cannot submit for another team');

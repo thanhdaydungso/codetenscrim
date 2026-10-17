@@ -54,9 +54,11 @@ async function freePort(){return new Promise(resolve=>{const s=net.createServer(
     await evaluate('document.querySelector("#teamInput").value="1 UI TEAM";document.querySelector("#replace").click();document.querySelector("#borderColor").value="#ff0000";document.querySelector("#borderColor").dispatchEvent(new Event("input"));');assert.equal(await evaluate('document.querySelectorAll("#roster tr").length'),1);
     await size(390,844);await fits();await screenshot('logo-mobile');
     await until(()=>evaluate('!!document.querySelector("#saveBoard") && !document.querySelector("#saveBoard").disabled'),'backup UI');
+    await evaluate('window.backupFetch=window.fetch;window.fetch=(url,options)=>String(url)==="/api/admin/logo-boards"&&!options?.method?Promise.resolve(new Response(JSON.stringify({message:"Temporary list error"}),{status:503,headers:{"Content-Type":"application/json"}})):window.backupFetch(url,options)');
     await evaluate('document.querySelector("#playnameCustom").value="MP";document.querySelector("#backupName").value="UI BACKUP";document.querySelector("#saveBoard").click();');
     await until(()=>evaluate('document.querySelector("#backupLink").value.includes("#") && !document.querySelector("#restoreBoard").disabled'),'saved backup');
     assert.equal(await evaluate('document.querySelector("#backupBoard").selectedOptions[0].textContent'),'UI BACKUP');
+    assert(await evaluate('document.querySelector("#backupStatus").textContent.includes("Đã lưu thành công")'),'List refresh failure must not hide successful save');
     assert.equal(await evaluate('!!document.querySelector("#toggleBoardLink")'),false);
     const shareLink=await evaluate('document.querySelector("#backupLink").value');
     await send('Page.navigate',{url:shareLink});

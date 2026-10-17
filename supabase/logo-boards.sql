@@ -31,8 +31,9 @@ begin
    select coalesce(jsonb_agg(jsonb_build_object('id',s.id,'name',s.name,'token',s.token,'accepting',s.accepting,'updated_at',s.updated_at,'expires_at',s.expires_at,'teamCount',jsonb_array_length(s.data->'teams'),'missing',(select count(*) from jsonb_array_elements(s.data->'assignments') a where a='-1'::jsonb)) order by s.updated_at desc),'[]'::jsonb) into result from public.scrim_logo_boards s;
    return result;
  elsif operation='create' then
-   insert into public.scrim_logo_boards(name,data,accepting) values(payload->>'name',payload->'data',exists(select 1 from jsonb_array_elements(payload->'data'->'assignments') a where a='-1'::jsonb)) returning * into board;
-   return to_jsonb(board);
+   insert into public.scrim_logo_boards(id,name,data,accepting) values(coalesce((payload->>'requestId')::uuid,gen_random_uuid()),payload->>'name',payload->'data',exists(select 1 from jsonb_array_elements(payload->'data'->'assignments') a where a='-1'::jsonb)) on conflict(id) do nothing returning * into board;
+   if not found then select * into board from public.scrim_logo_boards s where s.id=(payload->>'requestId')::uuid; end if;
+   return jsonb_build_object('id',board.id,'name',board.name,'token',board.token,'accepting',board.accepting,'expires_at',board.expires_at,'updated_at',board.updated_at,'teamCount',jsonb_array_length(board.data->'teams'),'missing',(select count(*) from jsonb_array_elements(board.data->'assignments') a where a='-1'::jsonb));
  end if;
  select * into board from public.scrim_logo_boards s where
    (share_token is not null and s.token=share_token) or (share_token is null and s.id=board_id) for update;

@@ -1,6 +1,6 @@
 'use strict';
 (() => {
-  let savedBoards=[],working=false,pendingCustom=null;
+  let savedBoards=[],working=false,pendingCustom=null,pendingSave=null;
   const status=message=>{$('backupStatus').textContent=message;};
   const current=()=>savedBoards.find(board=>board.id===$('backupBoard').value && (!board.expires_at || Date.parse(board.expires_at)>Date.now()));
   async function api(path,options={}) {
@@ -58,8 +58,13 @@
     const packed=logos.map(pack);
     const fallbackIndex=customDefaultLogo?packed.push(pack(customDefaultLogo))-1:-1;
     const data={version:1,teams,logos:packed,assignments:teams.map((_,i)=>manualAssignments[i]&&!manualAssignments[i].isFallback?logos.indexOf(manualAssignments[i]):fallbackIndex),borderColor,customId:$('playnameCustom').value,defaultLogo:customDefaultLogo?pack(customDefaultLogo):null};
-    const board=await api('',{method:'POST',body:JSON.stringify({name,data})});await refresh(board.id);
-    status('Đã lưu backup trong 2 giờ. Hết hạn sẽ tự xóa cả bản lưu và link.');
+    const serialized=JSON.stringify({name,data});
+    if(!pendingSave||pendingSave.serialized!==serialized)pendingSave={serialized,requestId:crypto.randomUUID()};
+    const board=await api('',{method:'POST',body:JSON.stringify({name,data,requestId:pendingSave.requestId})});pendingSave=null;
+    savedBoards=[board,...savedBoards.filter(item=>item.id!==board.id)];
+    $('backupBoard').replaceChildren(new Option('Chọn bản lưu',''));savedBoards.forEach(item=>$('backupBoard').add(new Option(item.name,item.id)));$('backupBoard').value=board.id;update();
+    status('Đã lưu thành công “'+board.name+'” trong 2 giờ. Link nhận logo đã sẵn sàng.');
+    try{await refresh(board.id);}catch{status('Đã lưu thành công “'+board.name+'”. Danh sách cũ chưa tải lại được, bạn vẫn có thể sao chép link.');}
   });
   $('restoreBoard').onclick=()=>{
     const board=current();if(!board||working||busy||uploading)return;

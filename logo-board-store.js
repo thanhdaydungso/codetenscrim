@@ -76,7 +76,9 @@ class LogoBoardStore {
       let board=boards.find(item=>token ? item.token===token : item.id===id);
       const info=item=>({id:item.id,name:item.name,token:item.token,accepting:item.accepting,updated_at:item.updated_at,expires_at:item.expires_at,teamCount:item.data.teams.length,missing:item.data.assignments.filter(i=>i===-1).length});
       if(action==='list')return boards.map(info).reverse();
-      if(action==='create') {board={id:crypto.randomUUID(),token:crypto.randomBytes(32).toString('hex'),name:payload.name,data:payload.data,accepting:payload.data.assignments.includes(-1),created_at:new Date(now).toISOString(),expires_at:new Date(now+7_200_000).toISOString(),updated_at:new Date(now).toISOString()};boards.push(board);}
+      if(action==='create') {
+        if(payload.requestId){const existing=boards.find(item=>item.id===payload.requestId);if(existing)return existing;}
+        board={id:payload.requestId||crypto.randomUUID(),token:crypto.randomBytes(32).toString('hex'),name:payload.name,data:payload.data,accepting:payload.data.assignments.includes(-1),created_at:new Date(now).toISOString(),expires_at:new Date(now+7_200_000).toISOString(),updated_at:new Date(now).toISOString()};boards.push(board);}
       else {
         if(!board)throw fail(404,'Bảng logo không tồn tại hoặc đã hết hạn 2 giờ.');
         if(action==='read')return board;

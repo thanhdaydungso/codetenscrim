@@ -634,7 +634,10 @@ async function handleAdminApi(req, res, url, cfg) {
       const data=validateBoard(body.data);
       const name=cleanText(body.name,100);
       if(!name)return apiError(res,400,'Hãy nhập tên bản lưu.');
-      return apiSuccess(res,201,'Đã lưu backup logo.',await logoBoards.call('create',{payload:{name,data}}));
+      const requestId=body.requestId;
+      if(requestId && !/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(requestId))return apiError(res,400,'Mã lưu không hợp lệ.');
+      const saved=await logoBoards.call('create',{payload:{name,data,requestId}});
+      return apiSuccess(res,201,'Đã lưu backup logo.',{id:saved.id,name:saved.name,token:saved.token,accepting:saved.accepting,expires_at:saved.expires_at,updated_at:saved.updated_at,teamCount:saved.teamCount??data.teams.length,missing:saved.missing??data.assignments.filter(i=>i===-1).length});
     }
   }
   const boardMatch=url.pathname.match(/^\/api\/admin\/logo-boards\/([a-f0-9-]{36})$/);
