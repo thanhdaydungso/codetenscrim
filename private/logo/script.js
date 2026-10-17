@@ -178,14 +178,14 @@ function borderGradient(ctx, highlight=false) {
 }
 function syncBorderPicker() {
  $('borderColor').style.background='linear-gradient('+(borderColor.angle*180/Math.PI+90)+'deg,'+borderColor.colors.join(',')+')';
- $('borderColor').textContent=BORDER_STYLES[borderColor.style].name;
- document.querySelectorAll('[data-border-style]').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===borderColor.style)));
+ $('borderColor').textContent='Random m?u ? ? '+BORDER_STYLES[borderColor.style].name;
+ $('borderColor').setAttribute('aria-label','Random m?u vi?n. Hi?n t?i: '+BORDER_STYLES[borderColor.style].name);
 }
 function chooseBorder(style,random=false) {
  if(busy||uploading)return;
  const colors=[...BORDER_STYLES[style].colors];
  if(random){const shift=Math.floor(Math.random()*colors.length);colors.push(...colors.splice(0,shift));if(Math.random()<.5)colors.reverse();}
- updateBorder({style,colors,angle:random?Math.random()*Math.PI*2:-.65,shine:random?.25+Math.random()*.5:.45,seed:Math.random()});
+ updateBorder({style,colors,angle:random?Math.random()*Math.PI*2:-.65,shine:random?.25+Math.random()*.5:.45,seed:random?Math.random():.37});
  syncBorderPicker();
 }
 function fallbackLogo() { return customDefaultLogo || flagLogo(); }
@@ -346,7 +346,6 @@ function render() {
   $('playnameCustom').disabled = busy || uploading;
   $('pickCustom').disabled = busy || uploading;
   $('borderColor').disabled = $('goldBorder').disabled = busy || uploading;
-  document.querySelectorAll('[data-border-style]').forEach(b=>b.disabled=busy||uploading);
   $('copyTable').disabled = !teams.length || busy || uploading;
   ['replace','append','reset','files'].forEach(id => $(id).disabled = busy || (id === 'files' && uploading));
 
@@ -565,15 +564,8 @@ function updateBorder(color) {
   if (customDefaultLogo) delete customDefaultLogo.avatarPreview;
   render();
 }
-$('borderColor').onclick=()=>chooseBorder((borderColor.style+1)%BORDER_STYLES.length);
-$('goldBorder').onclick=()=>chooseBorder((borderColor.style+1+Math.floor(Math.random()*(BORDER_STYLES.length-1)))%BORDER_STYLES.length,true);
-BORDER_STYLES.forEach((style,i)=>{
- const button=document.createElement('button');button.type='button';button.dataset.borderStyle=String(i);const title=document.createElement('strong');title.textContent=style.name;
- const note=document.createElement('small');note.textContent=style.note;
- button.append(title,note);button.title=style.colors.join(' | ');
- button.style.setProperty('--border-palette','linear-gradient(105deg,'+style.colors.join(',')+')');
- button.onclick=()=>chooseBorder(i);$('borderStyles').append(button);
-});
+$('borderColor').onclick=()=>chooseBorder((borderColor.style+1+Math.floor(Math.random()*(BORDER_STYLES.length-1)))%BORDER_STYLES.length,true);
+$('goldBorder').onclick=()=>chooseBorder(0);
 syncBorderPicker();
 function clearDefaultLogo() {
   if (customDefaultLogo) URL.revokeObjectURL(customDefaultLogo.url);
