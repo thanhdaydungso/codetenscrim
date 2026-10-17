@@ -22,7 +22,7 @@ update public.scrim_logo_boards s set accepting=exists(select 1 from jsonb_array
 alter table public.scrim_logo_boards enable row level security;
 revoke all on public.scrim_logo_boards from public, anon, authenticated, service_role;
 create or replace function public.scrim_logo_board(operation text, board_id uuid default null, share_token text default null, payload jsonb default null)
-returns jsonb language plpgsql security definer set search_path = '' set statement_timeout = '60s' as $
+returns jsonb language plpgsql security definer set search_path = '' set statement_timeout = '60s' as $$
 declare board public.scrim_logo_boards; result jsonb; slot integer;
 begin
  if operation='health' then return jsonb_build_object('statementTimeout',current_setting('statement_timeout'),'lockFreeReads',true); end if;
