@@ -16,6 +16,7 @@
     });
     const missing=board.teams.filter(team=>!team.assigned).length;
     $('logoForm').hidden=!board.accepting||!missing;
+    $('shareExpiry').textContent=board.expires_at?'Bản lưu và link tự xóa lúc '+new Date(board.expires_at).toLocaleString('vi-VN')+'.':'';
     message(!board.accepting?'BTC đã đóng link nhận logo.':missing?missing+' đội đang chờ logo.':'Tất cả đội đã có logo.');
   }
   async function png(file){
@@ -23,7 +24,7 @@
     const url=URL.createObjectURL(file);try{
       const img=new Image();img.src=url;await img.decode();const scale=Math.min(1,1000/Math.max(img.naturalWidth,img.naturalHeight));
       const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));canvas.height=Math.max(1,Math.round(img.naturalHeight*scale));canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
-      const image=canvas.toDataURL('image/png');if(image.length>2_800_000)throw Error('Ảnh sau xử lý quá lớn. Hãy chọn logo đơn giản hơn hoặc nhỏ hơn.');return image;
+      const image=canvas.toDataURL('image/png');if(image.length>14_000_000)throw Error('Ảnh sau xử lý quá lớn. Hãy chọn logo đơn giản hơn hoặc nhỏ hơn.');return image;
     }finally{URL.revokeObjectURL(url);}
   }
   $('logoFile').onchange=async()=>{const file=$('logoFile').files[0];$('logoPreview').hidden=true;if(!file)return;try{$('logoPreview').src=await png(file);$('logoPreview').hidden=false;}catch(error){message(error.message);$('logoFile').value='';}};
@@ -34,6 +35,7 @@
     catch(error){try{await load();}catch{}message(error.message);}
     finally{working=false;$('sendLogo').disabled=false;$('refreshShare').disabled=false;}
   };
+  setInterval(()=>{if(board?.expires_at && Date.parse(board.expires_at)<=Date.now()){$('logoForm').hidden=true;message('Bảng logo đã hết hạn sau 2 giờ. Hãy xin link mới từ BTC.');}},1000);
   $('refreshShare').onclick=()=>{if(!working)load().catch(error=>message(error.message));};
   load().catch(error=>message(error.message));
 })();

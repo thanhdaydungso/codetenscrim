@@ -7,9 +7,9 @@ const crcTable=Uint32Array.from({length:256},(_,n)=>{let c=n;for(let k=0;k<8;k++
 function pngCrc(bytes){let crc=0xffffffff;for(const byte of bytes)crc=crcTable[(crc^byte)&255]^(crc>>>8);return (crc^0xffffffff)>>>0;}
 const fail = (status, message) => Object.assign(new Error(message), {status});
 function validateImage(image) {
-  if (typeof image !== 'string' || image.length > 2_800_000 || !/^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(image)) throw fail(400, 'Chọn ảnh PNG hợp lệ, tối đa 2 MB.');
+  if (typeof image !== 'string' || image.length > 14_000_000 || !/^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(image)) throw fail(400, 'Chọn ảnh PNG hợp lệ, tối đa 10 MB.');
   const bytes = Buffer.from(image.slice(22), 'base64');
-  if (bytes.length < 33 || bytes.length > 2_097_152 || bytes.subarray(0,8).toString('hex') !== '89504e470d0a1a0a' || bytes.toString('ascii',12,16) !== 'IHDR') throw fail(400, 'Ảnh PNG không hợp lệ.');
+  if (bytes.length < 33 || bytes.length > 10_485_760 || bytes.subarray(0,8).toString('hex') !== '89504e470d0a1a0a' || bytes.toString('ascii',12,16) !== 'IHDR') throw fail(400, 'Ảnh PNG không hợp lệ.');
   const w=bytes.readUInt32BE(16), h=bytes.readUInt32BE(20);
   if (!w || !h || w>4096 || h>4096 || w*h>4_000_000) throw fail(400, 'Ảnh quá lớn. Hãy chọn ảnh dưới 4 triệu pixel.');
   // Browser uploads are normalized to a non-interlaced 8-bit PNG.
@@ -53,37 +53,46 @@ function validateBoard(value) {
   if(!border || !Number.isInteger(border.style) || border.style<0 || border.style>30 || !Number.isFinite(border.seed) || !Array.isArray(border.colors) || !border.colors.length || border.colors.length>20 || border.colors.some(color=>!/^#[a-f0-9]{6}$/i.test(color)))throw fail(400,'Màu viền không hợp lệ.');
   if(!Number.isFinite(border.angle)||!Number.isFinite(border.shine)||border.shine<0.12||border.shine>0.85)throw fail(400,'Ánh sáng viền không hợp lệ.');
   data.borderColor={style:border.style,seed:border.seed,angle:border.angle,shine:border.shine,colors:[...border.colors]};
-  if(Buffer.byteLength(JSON.stringify(data))>24_000_000)throw fail(413,'Bảng backup quá lớn (tối đa 24 MB).');
+  if(Buffer.byteLength(JSON.stringify(data))>100_000_000)throw fail(413,'Bảng backup quá lớn (tối đa 100 MB).');
   return data;
 }
 class LogoBoardStore {
-  constructor({storage, dataDir}) {this.storage=storage;this.file=path.join(dataDir,'logo-boards.json');this.queue=Promise.resolve();}
+  constructor({storage, dataDir, now=Date.now}) {this.storage=storage;this.file=path.join(dataDir,'logo-boards.json');this.queue=Promise.resolve();this.now=now;}
   async call(action, {id=null,token=null,payload=null}={}) {
     if(this.storage)return this.storage.rpc('scrim_logo_board',{operation:action,board_id:id,share_token:token,payload});
     const execute=async()=>{
       let boards;
       try{boards=JSON.parse(await fs.readFile(this.file,'utf8'));}catch(error){if(error.code!=='ENOENT')throw error;boards=[];}
+      const now=this.now();
+      const flush=async()=>{
+        await fs.mkdir(path.dirname(this.file),{recursive:true});
+        const temp=this.file+'.'+crypto.randomUUID()+'.tmp';await fs.writeFile(temp,JSON.stringify(boards));await fs.rename(temp,this.file);
+      };
+      const previousLength=boards.length;
+      boards=boards.map(item=>({...item,expires_at:item.expires_at||new Date(Date.parse(item.updated_at)+7_200_000).toISOString()})).filter(item=>Date.parse(item.expires_at)>now);
+      const deleted=previousLength-boards.length;
+      if(deleted)await flush();
+      if(action==='cleanup')return {deleted};
       let board=boards.find(item=>token ? item.token===token : item.id===id);
-      const info=item=>({id:item.id,name:item.name,token:item.token,accepting:item.accepting,updated_at:item.updated_at,teamCount:item.data.teams.length,missing:item.data.assignments.filter(i=>i===-1).length});
+      const info=item=>({id:item.id,name:item.name,token:item.token,accepting:item.accepting,updated_at:item.updated_at,expires_at:item.expires_at,teamCount:item.data.teams.length,missing:item.data.assignments.filter(i=>i===-1).length});
       if(action==='list')return boards.map(info).reverse();
-      if(action==='create') {board={id:crypto.randomUUID(),token:crypto.randomBytes(32).toString('hex'),name:payload.name,data:payload.data,accepting:true,updated_at:new Date().toISOString()};boards.push(board);}
+      if(action==='create') {board={id:crypto.randomUUID(),token:crypto.randomBytes(32).toString('hex'),name:payload.name,data:payload.data,accepting:true,created_at:new Date(now).toISOString(),expires_at:new Date(now+7_200_000).toISOString(),updated_at:new Date(now).toISOString()};boards.push(board);}
       else {
-        if(!board)throw fail(404,'Không tìm thấy bảng logo.');
+        if(!board)throw fail(404,'Bảng logo không tồn tại hoặc đã hết hạn 2 giờ.');
         if(action==='read')return board;
-        if(action==='public')return {name:board.name,accepting:board.accepting,teams:board.data.teams.map((team,index)=>({name:team.name,index,assigned:board.data.assignments[index]!==-1}))};
+        if(action==='public')return {name:board.name,accepting:board.accepting,expires_at:board.expires_at,teams:board.data.teams.map((team,index)=>({name:team.name,index,assigned:board.data.assignments[index]!==-1}))};
         if(action==='close')board.accepting=payload.accepting;
         else if(action==='submit'){
           if(!board.accepting)throw fail(409,'Link đã đóng nhận logo.');
           const slot=payload.slot;
           if(!Number.isInteger(slot)||slot<0||slot>=board.data.teams.length)throw fail(400,'Đội không hợp lệ.');
           if(board.data.assignments[slot]!==-1)throw fail(409,'Đội này đã có logo. Hãy tải lại bảng.');
-          if(Buffer.byteLength(JSON.stringify(board.data))+Buffer.byteLength(JSON.stringify(payload.logo))>24_000_000)throw fail(413,'Bảng đã đầy. Hãy liên hệ BTC.');
+          if(Buffer.byteLength(JSON.stringify(board.data))+Buffer.byteLength(JSON.stringify(payload.logo))>100_000_000)throw fail(413,'Bảng đã đầy. Hãy liên hệ BTC.');
           board.data.assignments[slot]=board.data.logos.length;board.data.logos.push(payload.logo);
         } else throw fail(400,'Thao tác không hợp lệ.');
       }
-      board.updated_at=new Date().toISOString();
-      await fs.mkdir(path.dirname(this.file),{recursive:true});
-      const temp=this.file+'.'+crypto.randomUUID()+'.tmp';await fs.writeFile(temp,JSON.stringify(boards));await fs.rename(temp,this.file);
+      board.updated_at=new Date(now).toISOString();
+      await flush();
       return action==='submit'?{saved:true}:board;
     };
     const result=this.queue.then(execute,execute);this.queue=result.catch(()=>{});return result;

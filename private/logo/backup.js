@@ -2,7 +2,7 @@
 (() => {
   let savedBoards=[],working=false,pendingCustom=null;
   const status=message=>{$('backupStatus').textContent=message;};
-  const current=()=>savedBoards.find(board=>board.id===$('backupBoard').value);
+  const current=()=>savedBoards.find(board=>board.id===$('backupBoard').value && (!board.expires_at || Date.parse(board.expires_at)>Date.now()));
   async function api(path,options={}) {
     const response=await fetch('/api/admin/logo-boards'+path,{credentials:'same-origin',cache:'no-store',...options,headers:{'Content-Type':'application/json',...options.headers}});
     const result=await response.json();if(!response.ok)throw Error(result.message||'Không truy cập được backup.');return result.data;
@@ -17,7 +17,7 @@
   }
   async function refresh(id=$('backupBoard').value) {
     savedBoards=await api('');$('backupBoard').replaceChildren(new Option('Chọn bản lưu',''));
-    savedBoards.forEach(board=>$('backupBoard').add(new Option(board.name+' · '+board.missing+'/'+board.teamCount+' đội trống'+(board.accepting?'':' · đã đóng'),board.id)));
+    savedBoards.forEach(board=>$('backupBoard').add(new Option(board.name+(board.expires_at?' · hết hạn '+new Date(board.expires_at).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}):'')+' · '+board.missing+'/'+board.teamCount+' đội trống'+(board.accepting?'':' · đã đóng'),board.id)));
     $('backupBoard').value=savedBoards.some(board=>board.id===id)?id:(savedBoards[0]?.id||'');update();
   }
   function applyCustom(){
@@ -31,7 +31,7 @@
     const w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
     const scale=Math.min(1,1600/Math.max(w,h));const canvas=document.createElement('canvas');
     canvas.width=Math.max(1,Math.round(w*scale));canvas.height=Math.max(1,Math.round(h*scale));canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
-    const value=canvas.toDataURL('image/png');if(value.length>2_800_000)throw Error('Có ảnh quá lớn để backup. Hãy dùng ảnh nhỏ hơn 2 MB.');return value;
+    const value=canvas.toDataURL('image/png');if(value.length>14_000_000)throw Error('Có ảnh quá lớn để backup. Hãy dùng ảnh nhỏ hơn 10 MB.');return value;
   }
   function pack(logo) {
     const value={name:logo.name||'Logo',image:imageData(logo.img)};
@@ -56,7 +56,7 @@
     const data={version:1,teams,logos:logos.map(pack),assignments:teams.map((_,i)=>manualAssignments[i]?logos.indexOf(manualAssignments[i]):-1),borderColor,customId:$('playnameCustom').value,defaultLogo:customDefaultLogo?pack(customDefaultLogo):null};
     const name=$('backupName').value.trim()||'Bảng logo '+new Date().toLocaleString('vi-VN');
     const board=await api('',{method:'POST',body:JSON.stringify({name,data})});await refresh(board.id);
-    status('Đã lưu backup. Sao chép link để nhận thêm logo.');
+    status('Đã lưu backup trong 2 giờ. Hết hạn sẽ tự xóa cả bản lưu và link.');
   });
   $('restoreBoard').onclick=()=>{
     const board=current();if(!board||working||busy||uploading)return;
@@ -81,5 +81,6 @@
     try{await navigator.clipboard.writeText(value);status('Đã sao chép link.');}catch{$('backupLink').focus();$('backupLink').select();status('Hãy sao chép link trong ô phía trên.');}
   };
   document.addEventListener('logo-board-change',update);
+  setInterval(update,30_000);
   update();refresh().catch(error=>status(error.message));
 })();

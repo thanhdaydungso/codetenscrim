@@ -490,7 +490,7 @@ async function handlePublicApi(req, res, url, cfg) {
   if(shareMatch){
     if(req.method==='GET')return apiSuccess(res,200,'Đã tải bảng nhận logo.',await logoBoards.call('public',{token:shareMatch[1]}));
     if(req.method==='POST'){
-      const body=await parseBody(req,3_000_000);
+      const body=await parseBody(req,15_000_000);
       if(!Number.isInteger(body.slot)||body.slot<0||body.slot>=200)return apiError(res,400,'Đội không hợp lệ.');
       const logo=validateLogo({image:body.image,name:'Logo đội'});
       return apiSuccess(res,201,'Đã nhận logo. BTC có thể mở lại bản backup để xuất.',await logoBoards.call('submit',{token:shareMatch[1],payload:{slot:body.slot,logo}}));
@@ -618,7 +618,7 @@ async function handleAdminApi(req, res, url, cfg) {
   if (url.pathname === '/api/admin/logo-boards') {
     if(req.method==='GET')return apiSuccess(res,200,'Đã tải bản lưu logo.',await logoBoards.call('list'));
     if(req.method==='POST'){
-      const body=await parseBody(req,25_000_000);
+      const body=await parseBody(req,101_000_000);
       const data=validateBoard(body.data);
       const name=cleanText(body.name,100)||'Bảng logo';
       return apiSuccess(res,201,'Đã lưu backup logo.',await logoBoards.call('create',{payload:{name,data}}));
@@ -926,6 +926,10 @@ async function handleRequest(req, res) {
 const server = http.createServer((req, res) => storage ? storage.run(() => handleRequest(req, res)) : handleRequest(req, res));
 
 (storage ? storage.run(ensureStorage) : ensureStorage()).then(() => {
+  if(!storage){
+    const cleanup=()=>logoBoards.call('cleanup').catch(error=>console.error('[Logo backup]',error.message));
+    cleanup();setInterval(cleanup,60_000).unref();
+  }
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`Web đang chạy tại http://localhost:${PORT}`);
     console.log(`Trang quản trị: http://localhost:${PORT}/admin`);

@@ -23,6 +23,16 @@ async function request(url,{cookie,body,method='GET'}={}){const response=await f
   assert.throws(()=>validateBoard({...original,assignments:[9,-1,-1]}),e=>e.status===400);
   const damaged=Buffer.from(image.slice(22),'base64');damaged[damaged.length-20]^=1;
   assert.throws(()=>validateLogo({image:'data:image/png;base64,'+damaged.toString('base64')}),e=>e.status===400);
+  // A valid noisy PNG above the previous 2 MB cap must now be accepted.
+  const crypto=require('node:crypto'),zlib=require('node:zlib');
+  const crc=bytes=>{let c=0xffffffff;for(const byte of bytes){c^=byte;for(let i=0;i<8;i++)c=c&1?0xedb88320^(c>>>1):c>>>1;}return(c^0xffffffff)>>>0;};
+  const chunk=(type,data)=>{const b=Buffer.alloc(data.length+12);b.writeUInt32BE(data.length);b.write(type,4);data.copy(b,8);b.writeUInt32BE(crc(b.subarray(4,b.length-4)),b.length-4);return b;};
+  const header=Buffer.alloc(13);header.writeUInt32BE(800);header.writeUInt32BE(800,4);header[8]=8;header[9]=6;
+  const pixels=crypto.randomBytes((800*4+1)*800);for(let y=0;y<800;y++)pixels[y*(800*4+1)]=0;
+  const largePng=Buffer.concat([Buffer.from('89504e470d0a1a0a','hex'),chunk('IHDR',header),chunk('IDAT',zlib.deflateSync(pixels)),chunk('IEND',Buffer.alloc(0))]);
+  assert(largePng.length>2_097_152);const largeImage='data:image/png;base64,'+largePng.toString('base64');
+  assert.equal(validateLogo({image:largeImage}).image,largeImage);
+  assert.throws(()=>validateLogo({image:'data:image/png;base64,'+'A'.repeat(14_000_000)}),e=>e.status===400);
   const validated=validateBoard(original);assert.equal(validated.borderColor.angle,-.65);assert.equal(validated.logos[0].scale,.85);
   let forwarded;const cloud=new LogoBoardStore({dataDir,storage:{rpc:async(name,args)=>{forwarded={name,args};return [];}}});await cloud.call('list');assert.equal(forwarded.name,'scrim_logo_board');assert.equal(forwarded.args.operation,'list');
   await start(dataDir);let cookie=await login();
@@ -35,7 +45,7 @@ async function request(url,{cookie,body,method='GET'}={}){const response=await f
   result=await request('/api/logo-share/'+'f'.repeat(64));assert.equal(result.status,404);
   result=await request(share,{method:'POST',body:{slot:0,image}});assert.equal(result.status,409,'Assigned logo may not be replaced');
   result=await request(share,{method:'POST',body:{slot:1,image:'data:image/png;base64,AAAA'}});assert.equal(result.status,400);
-  const simultaneous=await Promise.all([request(share,{method:'POST',body:{slot:1,image}}),request(share,{method:'POST',body:{slot:1,image}})]);
+  const simultaneous=await Promise.all([request(share,{method:'POST',body:{slot:1,image:largeImage}}),request(share,{method:'POST',body:{slot:1,image}})]);
   assert.deepEqual(simultaneous.map(r=>r.status).sort(),[201,409]);
   result=await request('/api/admin/logo-boards/'+board.id,{cookie});assert.equal(result.body.data.data.assignments[0],0);assert.equal(result.body.data.data.assignments[1],1);assert.equal(result.body.data.data.logos.length,2);
   result=await request('/api/admin/logo-boards',{cookie});assert.equal(result.body.data[0].missing,1);
@@ -46,9 +56,26 @@ async function request(url,{cookie,body,method='GET'}={}){const response=await f
   result=await request('/api/admin/logo-boards/'+board.id,{cookie});assert.equal(result.body.data.data.logos.length,2);assert.equal(result.body.data.accepting,false);
   await request('/api/admin/logo-boards/'+board.id,{cookie,method:'PATCH',body:{accepting:true}});
   result=await request(share,{method:'POST',body:{slot:2,image}});assert.equal(result.status,201);
+  const largerBackup=await request('/api/admin/logo-boards',{cookie,method:'POST',body:{name:'Large backup',data:{...original,logos:[{name:'Large PNG',image:largeImage}]}}});
+  assert.equal(largerBackup.status,201,'Large backup request should be accepted');
+  // Expiration is based on creation time and is never extended by writes.
+  let now=Date.parse('2026-10-17T00:00:00Z');
+  const expiryDir=path.join(dataDir,'expiry');const expiring=new LogoBoardStore({dataDir:expiryDir,now:()=>now});
+  const temporary=await expiring.call('create',{payload:{name:'2-hour backup',data:validated}});
+  const expires=temporary.expires_at;assert.equal(Date.parse(expires),now+7_200_000);
+  now+=3_600_000;
+  await expiring.call('submit',{token:temporary.token,payload:{slot:1,logo:validateLogo({image})}});
+  await expiring.call('close',{id:temporary.id,payload:{accepting:false}});
+  assert.equal((await expiring.call('read',{id:temporary.id})).expires_at,expires);
+  now=Date.parse(expires)-1;assert.equal((await expiring.call('list')).length,1);
+  now++;await assert.rejects(expiring.call('public',{token:temporary.token}),e=>e.status===404);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(expiryDir,'logo-boards.json'),'utf8')),[]);
+  const cleanupBoard=await expiring.call('create',{payload:{name:'cleanup',data:validated}});
+  now=Date.parse(cleanupBoard.expires_at);assert.equal((await expiring.call('cleanup')).deleted,1);
+  assert.equal((await expiring.call('list')).length,0);
   assert.equal((await fetch(base+'/logo-submit.html')).status,200);
   assert.equal((await fetch(base+'/logo/backup.js',{redirect:'manual'})).status,302);
   assert.equal((await fetch(base+'/logo/backup.js',{headers:{Cookie:cookie}})).status,200);
-  console.log('PASS logo-boards: snapshots/settings, public submissions, occupied slots, races, close/reopen, restart, authorization.');
+  console.log('PASS logo-boards: snapshots/settings, public submissions, occupied slots, races, close/reopen, restart, authorization, >2 MB images and 2-hour expiry.');
  }finally{await stop();fs.rmSync(dataDir,{recursive:true,force:true});}
 })().catch(e=>{console.error(e);process.exitCode=1;});
