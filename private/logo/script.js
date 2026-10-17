@@ -374,18 +374,22 @@ function drawImageFit(ctx, img, x, y, width, height, cover) {
   const w = imageWidth * scale, h = imageHeight * scale;
   ctx.drawImage(img, x + (width - w) / 2, y + (height - h) / 2, w, h);
 }
-function draw(canvas, logo) {
+function draw(canvas, logo, square = false) {
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, SIZE, SIZE);
   if (!logo) return;
   const center = SIZE / 2;
   const borderWidth = 50;
   const radius = (SIZE - borderWidth) / 2;
+  const outline = r => {
+    ctx.beginPath();
+    if (square) ctx.rect(center - r, center - r, r * 2, r * 2);
+    else ctx.arc(center, center, r, 0, Math.PI * 2);
+  };
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
   ctx.save();
-  ctx.beginPath();
-  ctx.arc(center, center, radius, 0, Math.PI * 2);
+  outline(radius);
   ctx.clip();
   const edited = !logo.isFallback && (logo.cutout || logo.background || logo.bgColor);
   if (!logo.isFallback && logo.background) drawImageFit(ctx, logo.background.img, 25, 25, 950, 950, true);
@@ -393,8 +397,7 @@ function draw(canvas, logo) {
   const side = edited ? 950 * (logo.scale || .8) : 950;
   drawImageFit(ctx, logo.cutout || logo.img, (SIZE-side)/2, (SIZE-side)/2, side, side, !edited);
   ctx.restore();
-  ctx.beginPath();
-  ctx.arc(center, center, radius, 0, Math.PI * 2);
+  outline(radius);
   ctx.strokeStyle = borderGradient(ctx);
   ctx.lineWidth = borderWidth;
   ctx.stroke();
@@ -402,7 +405,7 @@ function draw(canvas, logo) {
   ctx.strokeStyle = borderGradient(ctx,true);
   ctx.stroke();
   for(const [r,width,alpha] of [[center-2,3,.8],[center-borderWidth+2,3,.65],[radius-9,1.5,.45]]) {
-    ctx.beginPath();ctx.arc(center,center,r,0,Math.PI*2);
+    outline(r);
     ctx.strokeStyle=borderGradient(ctx);ctx.lineWidth=width;ctx.stroke();
     ctx.strokeStyle='rgba(255,255,255,'+alpha+')';ctx.lineWidth=width/2;ctx.stroke();
   }
@@ -410,7 +413,8 @@ function draw(canvas, logo) {
   for(let i=0;i<10;i++) {
     const angle=(i/10+borderColor.seed)*Math.PI*2;
     const r=radius+Math.sin(i*7+borderColor.seed*20)*14;
-    const x=center+Math.cos(angle)*r,y=center+Math.sin(angle)*r,size=i%3===0?8:3;
+    const edgeScale = square ? 1 / Math.max(Math.abs(Math.cos(angle)), Math.abs(Math.sin(angle))) : 1;
+    const x=center+Math.cos(angle)*r*edgeScale,y=center+Math.sin(angle)*r*edgeScale,size=i%3===0?8:3;
     ctx.beginPath();ctx.moveTo(x-size,y);ctx.lineTo(x+size,y);ctx.moveTo(x,y-size);ctx.lineTo(x,y+size);
     ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=1.5;ctx.stroke();
   }
@@ -463,7 +467,9 @@ async function download() {
       const {logo,index}=matched[i];tell(`Đang tạo ảnh ${i+1}/${matched.length}…`);draw(canvas,logo);
       const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw new Error('Không tạo được ảnh PNG.');
       const name = exportName(index);
-      entries.push({name,data:new Uint8Array(await blob.arrayBuffer())});
+      draw(canvas,logo,true);
+      const headBlob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!headBlob)throw new Error('HeadPics PNG failed.');
+      entries.push({name,data:new Uint8Array(await blob.arrayBuffer()),headData:new Uint8Array(await headBlob.arrayBuffer())});
     }
     const url=URL.createObjectURL(makeZip(buildLogoBundle(entries, playname))),link=document.createElement('a');link.href=url;link.download='SCRIM ' + customId + ' - logo.zip';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
     tell('ZIP gồm 3 thư mục logo và ' + playname.name + '.');

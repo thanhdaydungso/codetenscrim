@@ -5,7 +5,7 @@
     if (!images.length || !playname || !(playname.data instanceof Uint8Array)) throw new Error('Missing logos or playname');
     if (!playname.name || /[\\/]/.test(playname.name) || !playname.name.endsWith('.json')) throw new Error('Invalid playname filename');
     if (images.length * folders.length + 1 > 65535) throw new Error('Too many ZIP entries');
-    const entries = folders.flatMap(folder => images.map(image => ({ name: folder + '/' + image.name, data: image.data })));
+    const entries = folders.flatMap(folder => images.map(image => ({ name: folder + '/' + image.name, data: folder === 'HeadPics' ? (image.headData || image.data) : image.data })));
     entries.push(playname);
     return entries;
   }
