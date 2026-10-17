@@ -1,4 +1,26 @@
 <!DOCTYPE html>
-<html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Gửi logo đội</title><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/ui.css?v=20261017-6"><link rel="stylesheet" href="/logo-submit.css"></head>
-<body><main class="container logo-submit"><section class="panel"><span class="eyebrow">LOGO ĐỘI</span><h1 id="boardTitle">Gửi logo đội</h1><p>Chọn đội chưa có logo rồi gửi ảnh. Logo đã gán sẽ được giữ nguyên.</p><p id="shareStatus" role="status" aria-live="polite">Đang tải bảng…</p>
-<p id="shareExpiry"></p><form id="logoForm" hidden><label for="teamSlot">Đội của bạn</label><select id="teamSlot" required></select><label for="logoFile">Logo PNG, JPG hoặc WebP</label><input id="logoFile" type="file" accept="image/png,image/jpeg,image/webp" required><img id="logoPreview" alt="Xem trước logo sẽ gửi" hidden><button id="sendLogo" type="submit" class="button primary">Gửi logo</button></form><button id="refreshShare" type="button" class="button secondary">Tải lại bảng</button><h2>Danh sách đội</h2><ul id="shareTeams"></ul></section></main><script src="/logo-submit.js"></script></body></html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer">
+<title>Gửi logo đội</title><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/ui.css?v=20261017-6"><link rel="stylesheet" href="/logo-submit.css?v=20261017-2">
+</head>
+<body class="logo-share-page">
+<main class="logo-submit">
+<header class="share-topbar"><span class="share-brand"><b>FF</b> CODE LOGO</span><span class="share-tag">TEAM LOGO DROP</span></header>
+<section class="share-hero" aria-labelledby="boardTitle">
+<div class="hero-copy"><span class="share-eyebrow"><i></i> BẢNG NHẬN LOGO</span><h1 id="boardTitle">Gửi logo đội</h1><p class="hero-description">Logo của đội bạn. <br>Một dấu ấn, sẵn sàng lên bảng.</p><p class="hero-rule">Mỗi người gửi một lần. Logo đã gán được giữ nguyên.</p></div>
+<div class="progress-card"><div class="progress-heading"><span>TIẾN ĐỘ HOÀN THÀNH</span><strong id="progressPercent">—</strong></div><div id="shareProgress" class="share-progress" role="progressbar" aria-label="Tiến độ nhận logo" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progressFill"></span></div><div class="share-metrics"><div><b id="totalTeams">—</b><span>Tổng đội</span></div><div><b id="receivedTeams">—</b><span>Đã có logo</span></div><div><b id="missingTeams">—</b><span>Đang chờ</span></div></div><p id="shareExpiry" class="share-expiry"></p></div>
+</section>
+<div class="share-notice" role="status" aria-live="polite"><span class="notice-symbol" aria-hidden="true"></span><p id="shareStatus">Đang tải bảng…</p></div>
+<div class="submission-layout">
+<form id="logoForm" class="upload-panel" hidden>
+<div class="panel-heading"><span class="share-eyebrow">DÀNH CHO ĐỘI CỦA BẠN</span><h2>Gửi logo</h2><p>Chọn đúng đội trước khi gửi ảnh.</p></div>
+<label for="teamSlot">01 <span>Chọn đội</span></label><select id="teamSlot" required></select>
+<label for="logoFile">02 <span>Tải logo lên</span></label>
+<div class="upload-drop"><span class="upload-symbol" aria-hidden="true">↗</span><strong>Chọn ảnh logo</strong><span>PNG, JPG, WebP · tối đa 10 MB</span><input id="logoFile" aria-label="Chọn ảnh logo PNG, JPG hoặc WebP" type="file" accept="image/png,image/jpeg,image/webp" required></div>
+<img id="logoPreview" alt="Xem trước logo sẽ gửi" hidden><button id="sendLogo" type="submit" class="share-send">Gửi logo đội <span aria-hidden="true">↗</span></button><p class="submit-note">Kiểm tra kỹ trước khi gửi. Mỗi người chỉ gửi được một lần.</p>
+</form>
+<section class="teams-panel" aria-labelledby="teamsTitle"><div class="teams-heading"><div><span class="share-eyebrow">BẢNG ĐỘI</span><h2 id="teamsTitle">Danh sách đội</h2></div><button id="refreshShare" type="button" class="share-refresh"><span aria-hidden="true">↻</span> Tải lại</button></div><div class="team-legend"><span><i class="legend-dot received"></i> Đã có logo</span><span><i class="legend-dot"></i> Đang chờ logo</span></div><ul id="shareTeams"></ul></section>
+</div><footer class="share-footer"><span>CODE LOGO / TEAM IDENTITY</span><span>Logo gửi về được lưu trực tiếp cho BTC.</span></footer>
+</main><script src="/logo-submit.js?v=20261017-2"></script>
+</body></html>

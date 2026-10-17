@@ -13,10 +13,14 @@
     board=await api();$('boardTitle').textContent=board.name;$('shareTeams').replaceChildren();$('teamSlot').replaceChildren(new Option('Chọn đội của bạn',''));
     board.teams.forEach(team=>{
       const li=document.createElement('li'),name=document.createElement('span'),state=document.createElement('small');
-      name.textContent=(team.index+1)+'. '+team.name;state.textContent=team.assigned?'Đã có logo':'Chưa có logo';li.append(name,state);$('shareTeams').append(li);
+      li.dataset.assigned=String(team.assigned);name.textContent=team.name;state.textContent=team.assigned?'Đã có logo':'Đang chờ';li.append(name,state);$('shareTeams').append(li);
       if(!team.assigned)$('teamSlot').add(new Option(team.name,String(team.index)));
     });
     const missing=board.teams.filter(team=>!team.assigned).length;
+    const total=board.teams.length,received=total-missing,percent=total?Math.round(received/total*100):0;
+    $('totalTeams').textContent=total;$('receivedTeams').textContent=received;$('missingTeams').textContent=missing;
+    $('progressPercent').textContent=percent+'%';$('progressFill').style.width=percent+'%';$('shareProgress').setAttribute('aria-valuenow',String(percent));
+    document.title=board.name+' · Gửi logo đội';
     sent=sent||board.submitted;
     $('logoForm').hidden=sent||!board.accepting||!missing;
     $('shareExpiry').textContent=board.expires_at?'Bản lưu và link tự xóa lúc '+new Date(board.expires_at).toLocaleString('vi-VN')+'.':'';
