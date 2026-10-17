@@ -635,18 +635,8 @@ async function handleAdminApi(req, res, url, cfg) {
 
   if (customMatch && req.method === 'DELETE') {
     const id = normalizeCustomId(decodeURIComponent(customMatch[1]));
-    const confirmDelete = url.searchParams.get('confirm') === 'yes';
-    return withWriteLock(async () => {
-      const latestCustoms = readJson(CUSTOM_FILE, initialCustoms());
-      const latestTeams = readJson(TEAM_FILE, []);
-      if (!latestCustoms.some(item => item.id === id)) return apiError(res, 404, 'Không tìm thấy custom.');
-      const count = latestTeams.filter(team => team.customId === id).length;
-      if (count && !confirmDelete) return apiError(res, 409, `Custom đang có ${count} đội. Cần xác nhận xóa dữ liệu.`);
-      await backupFiles(`delete-custom-${id}`);
-      await writeJsonAtomic(CUSTOM_FILE, latestCustoms.filter(item => item.id !== id));
-      await writeJsonAtomic(TEAM_FILE, latestTeams.filter(team => team.customId !== id));
-      return apiSuccess(res, 200, 'Đã xóa custom và tạo bản sao lưu.');
-    });
+    if (!customs.some(item => item.id === id)) return apiError(res, 404, 'Kh?ng t?m th?y custom.');
+    return apiError(res, 403, 'Custom ???c l?u c? ??nh, kh?ng ???c x?a. Ch? c? th? RS team/player ho?c kh?a nh?n.');
   }
 
   const customTeamsMatch = url.pathname.match(/^\/api\/admin\/customs\/([^/]+)\/teams$/);

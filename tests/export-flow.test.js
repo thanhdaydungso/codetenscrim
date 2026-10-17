@@ -251,10 +251,14 @@ async function run() {
   assert(afterReset.body.data.find(custom => custom.id === 'MP').color === '#654321', 'MP migration overwrote a later admin color change');
   assert(afterReset.body.data.some(custom => custom.id === 'NEW'), 'Added custom disappeared after reset/restart');
   assert(afterReset.body.data.find(custom => custom.id === 'HV').color === '#123456', 'Custom settings disappeared after reset');
-  await admin('/api/admin/customs/NEW', cookie, { method: 'DELETE' });
+  for (const id of ['NEW', 'HV']) {
+    const denied = await admin('/api/admin/customs/' + id + '?confirm=yes', cookie, { method: 'DELETE' });
+    assert(denied.response.status === 403, 'Permanent custom deletion was allowed: ' + id);
+    assert(fs.readFileSync(customsFile, 'utf8') === beforeReset, 'Blocked deletion changed custom definitions');
+  }
   await stopServer();
   await startServer();
-  assert(!(await request('/api/customs')).body.data.some(custom => custom.id === 'NEW'), 'Explicitly deleted custom reappeared');
+  assert((await request('/api/customs')).body.data.some(custom => custom.id === 'NEW'), 'Protected custom disappeared after restart');
 
 }
 

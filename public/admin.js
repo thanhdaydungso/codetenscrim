@@ -78,7 +78,6 @@ function renderCustoms() {
         <div class="actions compact-actions">
           <button class="button secondary" data-action="save" type="button">LƯU MÀU CUSTOM</button>
           <button class="button ${custom.locked ? 'success' : 'warning'}" data-action="toggle" type="button">${custom.locked ? 'MỞ NHẬN' : 'KHÓA NHẬN'}</button>
-          <button class="button danger" data-action="delete" type="button">XÓA CUSTOM</button>
         </div>
       </div>
     </article>`).join('');
@@ -235,13 +234,6 @@ $('#customAdminList').addEventListener('click', async event => {
       };
       const result = await api(`/api/admin/customs/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(body) });
       await loadCustoms(); showNotice(result.message); return;
-    }
-    if (action === 'delete') {
-      const warning = custom.teamCount ? `Custom ${custom.name} đang có ${custom.teamCount} đội. Xóa custom sẽ xóa toàn bộ dữ liệu đội. Tiếp tục?` : `Xóa custom ${custom.name}?`;
-      if (!confirm(warning)) return;
-      await api(`/api/admin/customs/${encodeURIComponent(id)}?confirm=yes`, { method: 'DELETE' });
-      if (selectedId === id) selectedId = '';
-      await loadCustoms(false); showNotice('Đã xóa custom và tạo bản sao lưu.');
     }
   } catch (error) { showNotice(error.message, 'bad'); }
 });
