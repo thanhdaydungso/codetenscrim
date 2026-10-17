@@ -6,7 +6,7 @@ const {validateBoard,validateLogo,LogoBoardStore}=require('../logo-board-store')
 const ROOT=path.resolve(__dirname,'..');
 const image='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==';
 const original={teams:[{name:'Đội đã gán',person:'Andrew',code:'902000006'},{name:'Đội còn trống'},{name:'Đội đóng link'}],logos:[{name:'Ảnh gốc',image,background:image,cutout:image,scale:.85,bgColor:'#112233',keyColor:'#445566'}],assignments:[0,-1,-1],borderColor:{style:1,seed:.37,angle:-.65,shine:.45,colors:['#ffffff','#112233']},customId:'HV',defaultLogo:{name:'Mặc định',image}};
-let child,base;
+let child,base,visitorCookie="";
 async function stop(){if(child&&child.exitCode===null){const exited=once(child,'exit');child.kill();await exited;}}
 async function start(dataDir){
  const probe=http.createServer();probe.listen(0,'127.0.0.1');await once(probe,'listening');const port=probe.address().port;await new Promise(r=>probe.close(r));base='http://127.0.0.1:'+port;
@@ -14,7 +14,8 @@ async function start(dataDir){
  for(let i=0;i<100;i++){try{if((await fetch(base+'/api/customs')).ok)return;}catch{}if(child.exitCode!==null)throw Error('Server failed');await new Promise(r=>setTimeout(r,40));}throw Error('Startup timed out');
 }
 async function login(){const r=await fetch(base+'/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:'boards-test'})});return r.headers.get('set-cookie').split(';')[0];}
-async function request(url,{cookie,body,method='GET'}={}){const response=await fetch(base+url,{method,headers:{'Content-Type':'application/json',...(cookie?{Cookie:cookie}:{})},body:body?JSON.stringify(body):undefined});return {status:response.status,body:await response.json()};}
+async function request(url,{cookie,body,method='GET'}={}){const response=await fetch(base+url,{method,headers:{'Content-Type':'application/json',...((cookie||visitorCookie)?{Cookie:cookie||visitorCookie}:{})},body:body?JSON.stringify(body):undefined});const setCookie=response.headers.get('set-cookie');if(setCookie?.startsWith('logo_sender='))visitorCookie=setCookie.split(';')[0];return {status:response.status,body:await response.json()};}
+
 (async()=>{
  const dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'logo-boards-'));
  try{
@@ -51,6 +52,9 @@ async function request(url,{cookie,body,method='GET'}={}){const response=await f
   result=await request('/api/admin/logo-boards',{cookie});assert.equal(result.body.data[0].missing,1);
   result=await request('/api/admin/logo-boards/'+board.id,{cookie,method:'PATCH',body:{accepting:false}});assert.equal(result.status,405);
   result=await request(share);assert.equal(result.body.data.accepting,true);
+  result=await request(share,{method:'POST',body:{slot:2,image}});assert.equal(result.status,409,'One sender cannot submit for another team');
+  result=await request(share);assert.equal(result.body.data.submitted,true);
+  visitorCookie='';await request(share);
   result=await request(share,{method:'POST',body:{slot:2,image}});assert.equal(result.status,201);
   result=await request(share);assert.equal(result.body.data.accepting,false,'Last logo must auto-lock link');
   result=await request(share,{method:'POST',body:{slot:2,image}});assert.equal(result.status,409);
@@ -67,9 +71,15 @@ async function request(url,{cookie,body,method='GET'}={}){const response=await f
   const temporary=await expiring.call('create',{payload:{name:'2-hour backup',data:validated}});
   const expires=temporary.expires_at;assert.equal(Date.parse(expires),now+7_200_000);
   now+=3_600_000;
-  await expiring.call('submit',{token:temporary.token,payload:{slot:1,logo:validateLogo({image})}});
+  await expiring.call('submit',{token:temporary.token,payload:{slot:1,logo:validateLogo({image}),visitor:'a'.repeat(64)}});
   await assert.rejects(expiring.call('close',{id:temporary.id,payload:{accepting:false}}),e=>e.status===405);
   assert.equal((await expiring.call('read',{id:temporary.id})).expires_at,expires);
+  await assert.rejects(expiring.call('submit',{token:temporary.token,payload:{slot:2,logo:validateLogo({image}),visitor:'a'.repeat(64)}}),e=>e.status===409);
+  const raceBoard=await expiring.call('create',{payload:{name:'Sender race',data:validated}});
+  const race=await Promise.allSettled([1,2].map(slot=>expiring.call('submit',{token:raceBoard.token,payload:{slot,logo:validateLogo({image}),visitor:'b'.repeat(64)}})));
+  assert.equal(race.filter(item=>item.status==='fulfilled').length,1);
+  assert.equal(race.filter(item=>item.status==='rejected'&&item.reason.status===409).length,1);
+  const raceRecords=JSON.parse(fs.readFileSync(path.join(expiryDir,'logo-boards.json'),'utf8'));fs.writeFileSync(path.join(expiryDir,'logo-boards.json'),JSON.stringify(raceRecords.filter(item=>item.id!==raceBoard.id)));
   now=Date.parse(expires)-1;assert.equal((await expiring.call('list')).length,1);
   now++;await assert.rejects(expiring.call('public',{token:temporary.token}),e=>e.status===404);
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(expiryDir,'logo-boards.json'),'utf8')),[]);

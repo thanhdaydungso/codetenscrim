@@ -8,6 +8,7 @@ create table if not exists public.scrim_logo_boards (
  accepting boolean not null default true,
  updated_at timestamptz not null default now()
 );
+alter table public.scrim_logo_boards add column if not exists senders jsonb not null default '[]'::jsonb;
 alter table public.scrim_logo_boards add column if not exists created_at timestamptz;
 alter table public.scrim_logo_boards add column if not exists expires_at timestamptz;
 -- Existing backups expire two hours after their last stored timestamp at migration time.
@@ -39,10 +40,12 @@ begin
  if operation='read' then return to_jsonb(board);
  elsif operation='public' then
    select coalesce(jsonb_agg(jsonb_build_object('index',ordinality-1,'name',team->>'name','assigned',(board.data->'assignments'->((ordinality-1)::int)) <> '-1'::jsonb) order by ordinality),'[]'::jsonb) into result from jsonb_array_elements(board.data->'teams') with ordinality t(team,ordinality);
-   return jsonb_build_object('name',board.name,'accepting',board.accepting,'expires_at',board.expires_at,'teams',result);
+   return jsonb_build_object('name',board.name,'accepting',board.accepting,'expires_at',board.expires_at,'submitted',coalesce(board.senders ? (payload->>'visitor'),false),'teams',result);
  elsif operation='close' then
    raise exception 'LOGO_AUTOMATIC';
  elsif operation='submit' then
+   if coalesce(payload->>'visitor','') !~ '^[a-f0-9]{64}$' then raise exception 'LOGO_BAD_SENDER'; end if;
+   if board.senders ? (payload->>'visitor') then raise exception 'LOGO_ALREADY_SENT'; end if;
    if not board.accepting then raise exception 'LOGO_CLOSED'; end if;
    slot=(payload->>'slot')::integer;
    if slot is null or slot<0 or slot>=jsonb_array_length(board.data->'teams') then raise exception 'LOGO_BAD_SLOT'; end if;
@@ -50,7 +53,7 @@ begin
    if octet_length(board.data::text)+octet_length((payload->'logo')::text)>100000000 then raise exception 'LOGO_FULL'; end if;
    board.data=jsonb_set(board.data,array['assignments',slot::text],to_jsonb(jsonb_array_length(board.data->'logos')));
    board.data=jsonb_set(board.data,'{logos}',(board.data->'logos')||jsonb_build_array(payload->'logo'));
-   update public.scrim_logo_boards set data=board.data,accepting=exists(select 1 from jsonb_array_elements(board.data->'assignments') a where a='-1'::jsonb),updated_at=now() where id=board.id;
+   update public.scrim_logo_boards set data=board.data,senders=board.senders||jsonb_build_array(payload->>'visitor'),accepting=exists(select 1 from jsonb_array_elements(board.data->'assignments') a where a='-1'::jsonb),updated_at=now() where id=board.id;
    return '{"saved":true}'::jsonb;
  end if;
  raise exception 'LOGO_BAD_OPERATION';

@@ -488,12 +488,24 @@ function serveStatic(req, res, url) {
 async function handlePublicApi(req, res, url, cfg) {
   const shareMatch=url.pathname.match(/^\/api\/logo-share\/([a-f0-9]{64})$/);
   if(shareMatch){
-    if(req.method==='GET')return apiSuccess(res,200,'Đã tải bảng nhận logo.',await logoBoards.call('public',{token:shareMatch[1]}));
+    const raw=parseCookies(req).logo_sender||'';
+    const parts=raw.split('.');
+    const sign=value=>crypto.createHmac('sha256',ADMIN_KEY).update('logo-sender:'+value).digest('hex');
+    const valid=parts.length===2 && /^[a-f0-9]{64}$/.test(parts[0]) && /^[a-f0-9]{64}$/.test(parts[1]) && crypto.timingSafeEqual(Buffer.from(parts[1],'hex'),Buffer.from(sign(parts[0]),'hex'));
+    if(req.method==='GET'){
+      const sender=valid?parts[0]:crypto.randomBytes(32).toString('hex');
+      const secure=req.socket.encrypted||req.headers['x-forwarded-proto']==='https';
+      res.setHeader('Set-Cookie','logo_sender='+sender+'.'+sign(sender)+'; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400'+(secure?'; Secure':''));
+      const visitor=crypto.createHash('sha256').update(sender).digest('hex');
+      return apiSuccess(res,200,'Đã tải bảng nhận logo.',await logoBoards.call('public',{token:shareMatch[1],payload:{visitor}}));
+    }
     if(req.method==='POST'){
+      if(!valid)return apiError(res,428,'Hãy mở link nhận logo và cho phép cookie trước khi gửi.');
       const body=await parseBody(req,15_000_000);
       if(!Number.isInteger(body.slot)||body.slot<0||body.slot>=200)return apiError(res,400,'Đội không hợp lệ.');
       const logo=validateLogo({image:body.image,name:'Logo đội'});
-      return apiSuccess(res,201,'Đã nhận logo. BTC có thể mở lại bản backup để xuất.',await logoBoards.call('submit',{token:shareMatch[1],payload:{slot:body.slot,logo}}));
+      const visitor=crypto.createHash('sha256').update(parts[0]).digest('hex');
+      return apiSuccess(res,201,'Đã nhận logo. Bạn chỉ được gửi một lần cho bản lưu này.',await logoBoards.call('submit',{token:shareMatch[1],payload:{slot:body.slot,logo,visitor}}));
     }
     return apiError(res,405,'Thao tác không được hỗ trợ.');
   }

@@ -25,6 +25,7 @@ class SupabaseStorage {
     if (!response.ok) {
       const detail = await response.json().catch(() => ({}));
       const logoErrors = {
+        LOGO_ALREADY_SENT:[409,'Bạn đã gửi logo cho bản lưu này. Mỗi người chỉ được gửi một lần.'], LOGO_BAD_SENDER:[400,'Thiếu mã người gửi.'],
         LOGO_NOT_FOUND:[404,'Bảng logo không tồn tại hoặc đã hết hạn 2 giờ.'], LOGO_CLOSED:[409,'Đã đủ logo. Link nhận logo đã khóa.'], LOGO_AUTOMATIC:[405,'Trạng thái link được điều khiển tự động.'],
         LOGO_ASSIGNED:[409,'Đội này đã có logo. Hãy tải lại bảng.'], LOGO_BAD_SLOT:[400,'Đội không hợp lệ.'],
         LOGO_FULL:[413,'Bảng đã đầy. Hãy liên hệ BTC.']

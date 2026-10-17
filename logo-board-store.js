@@ -80,15 +80,18 @@ class LogoBoardStore {
       else {
         if(!board)throw fail(404,'Bảng logo không tồn tại hoặc đã hết hạn 2 giờ.');
         if(action==='read')return board;
-        if(action==='public')return {name:board.name,accepting:board.accepting,expires_at:board.expires_at,teams:board.data.teams.map((team,index)=>({name:team.name,index,assigned:board.data.assignments[index]!==-1}))};
+        if(action==='public')return {name:board.name,accepting:board.accepting,expires_at:board.expires_at,submitted:!!payload?.visitor && (board.senders||[]).includes(payload.visitor),teams:board.data.teams.map((team,index)=>({name:team.name,index,assigned:board.data.assignments[index]!==-1}))};
         if(action==='close')throw fail(405,'Link tự mở khi thiếu logo và tự khóa khi đủ logo.');
         else if(action==='submit'){
+          if(!/^[a-f0-9]{64}$/.test(payload.visitor||''))throw fail(400,'Thiếu mã người gửi.');
+          if((board.senders||[]).includes(payload.visitor))throw fail(409,'Bạn đã gửi logo cho bản lưu này. Mỗi người chỉ được gửi một lần.');
           if(!board.accepting)throw fail(409,'Link đã đóng nhận logo.');
           const slot=payload.slot;
           if(!Number.isInteger(slot)||slot<0||slot>=board.data.teams.length)throw fail(400,'Đội không hợp lệ.');
           if(board.data.assignments[slot]!==-1)throw fail(409,'Đội này đã có logo. Hãy tải lại bảng.');
           if(Buffer.byteLength(JSON.stringify(board.data))+Buffer.byteLength(JSON.stringify(payload.logo))>100_000_000)throw fail(413,'Bảng đã đầy. Hãy liên hệ BTC.');
           board.data.assignments[slot]=board.data.logos.length;board.data.logos.push(payload.logo);
+          (board.senders||=[]).push(payload.visitor);
           board.accepting=board.data.assignments.includes(-1);
         } else throw fail(400,'Thao tác không hợp lệ.');
       }
