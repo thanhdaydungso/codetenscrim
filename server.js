@@ -47,6 +47,8 @@ if (!['supabase', 'json'].includes(backend)) throw new Error('DATA_BACKEND khôn
 const storage = backend === 'supabase'
   ? new (require('./supabase-storage').SupabaseStorage)({ url: process.env.SUPABASE_URL, secret: process.env.SUPABASE_SECRET_KEY })
   : null;
+const {LogoBoardStore,validateBoard,validateLogo} = require('./logo-board-store');
+const logoBoards = new LogoBoardStore({storage,dataDir:DATA_DIR});
 function readData(file, fallback) {
   return storage ? storage.read(file === TEAM_FILE ? 'teams' : 'customs') : readJson(file, fallback);
 }
@@ -484,6 +486,18 @@ function serveStatic(req, res, url) {
 }
 
 async function handlePublicApi(req, res, url, cfg) {
+  const shareMatch=url.pathname.match(/^\/api\/logo-share\/([a-f0-9]{64})$/);
+  if(shareMatch){
+    if(req.method==='GET')return apiSuccess(res,200,'Đã tải bảng nhận logo.',await logoBoards.call('public',{token:shareMatch[1]}));
+    if(req.method==='POST'){
+      const body=await parseBody(req,3_000_000);
+      if(!Number.isInteger(body.slot)||body.slot<0||body.slot>=200)return apiError(res,400,'Đội không hợp lệ.');
+      const logo=validateLogo({image:body.image,name:'Logo đội'});
+      return apiSuccess(res,201,'Đã nhận logo. BTC có thể mở lại bản backup để xuất.',await logoBoards.call('submit',{token:shareMatch[1],payload:{slot:body.slot,logo}}));
+    }
+    return apiError(res,405,'Thao tác không được hỗ trợ.');
+  }
+
   const teams = await readData(TEAM_FILE, []);
   const customs = await readData(CUSTOM_FILE, initialCustoms());
 
@@ -601,6 +615,25 @@ async function handleAdminApi(req, res, url, cfg) {
   }
 
   if (!adminSession(req)) return apiError(res, 401, 'Phiên đăng nhập đã hết hạn.');
+  if (url.pathname === '/api/admin/logo-boards') {
+    if(req.method==='GET')return apiSuccess(res,200,'Đã tải bản lưu logo.',await logoBoards.call('list'));
+    if(req.method==='POST'){
+      const body=await parseBody(req,25_000_000);
+      const data=validateBoard(body.data);
+      const name=cleanText(body.name,100)||'Bảng logo';
+      return apiSuccess(res,201,'Đã lưu backup logo.',await logoBoards.call('create',{payload:{name,data}}));
+    }
+  }
+  const boardMatch=url.pathname.match(/^\/api\/admin\/logo-boards\/([a-f0-9-]{36})$/);
+  if(boardMatch){
+    if(req.method==='GET')return apiSuccess(res,200,'Đã mở backup logo.',await logoBoards.call('read',{id:boardMatch[1]}));
+    if(req.method==='PATCH'){
+      const body=await parseBody(req);
+      if(typeof body.accepting!=='boolean')return apiError(res,400,'Trạng thái link không hợp lệ.');
+      return apiSuccess(res,200,'Đã cập nhật link nhận logo.',await logoBoards.call('close',{id:boardMatch[1],payload:{accepting:body.accepting}}));
+    }
+  }
+
 
   const teams = await readData(TEAM_FILE, []);
   const customs = await readData(CUSTOM_FILE, initialCustoms());
@@ -851,6 +884,7 @@ function serveLogo(req, res, url) {
     '/logo/script.js': 'script.js',
     '/logo/custom-picker.js': 'custom-picker.js',
     '/logo/logo-bundle.js': 'logo-bundle.js',
+    '/logo/backup.js': 'backup.js',
     '/logo/avatars_b64.js': 'avatars_b64.js',
     ...Object.fromEntries(["Andrew","Kelly","Olivia","Ford","Nikita","Misha","Maxim","Kla","Paloma","Miguel","Caroline","Antonio","NgoKhong","Moco","Hayato"].map(name => ['/logo/avatars/' + name + '.png', 'avatars/' + name + '.png']))
   };

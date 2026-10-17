@@ -19,6 +19,7 @@
       for (const custom of result.data) select.add(new Option(custom.name + ' (' + custom.playerCount + ' player)', custom.id));
       loaded = true;
       choice.textContent = result.data.length ? 'Chưa chọn custom xuất kèm.' : 'Chưa có custom. Hãy tạo custom trong trang quản trị.';
+      document.dispatchEvent(new Event('logo-customs-loaded'));
     } catch (error) {
       select.replaceChildren(new Option('Không tải được custom', ''));
       choice.textContent = error.message + ' Bấm Chọn custom để thử lại.';

@@ -62,3 +62,11 @@ Chạy `npm test` để kiểm tra xuất dữ liệu, reset và migration. Ch�
 Custom MP được chuyển sang trắng `#FFFFFF` một lần khi nâng cấp (cờ `mpWhiteDefaultV2`). Những lần đổi màu sau đó của BTC được giữ nguyên qua các lần khởi động lại.
 
 Giao diện dùng nền than đen, trắng giấy và điểm nhấn xanh chanh, tham khảo hướng thiết kế Room & Pillar. Hình khối ở trang chủ được dựng bằng canvas, tự dừng khi ra ngoài màn hình hoặc bật giảm chuyển động. Các đoạn giới thiệu và hướng dẫn dài đã được lược bỏ; thông báo lỗi, trạng thái và nhãn thao tác vẫn được giữ.
+
+## Backup bảng logo và link nhận ảnh
+
+Chạy thêm `supabase/logo-boards.sql` trong Supabase SQL Editor. Trong Logo Studio, nhập tên rồi bấm **Lưu backup bảng hiện tại**. Bản lưu giữ danh sách đội, ảnh gốc/ảnh chỉnh sửa, gán logo, custom xuất kèm và màu/ánh sáng viền. Sao chép link để đội chưa có logo gửi ảnh mà không cần đăng nhập BTC. Logo đã gán không thể bị người ngoài thay thế; hai lần gửi đồng thời vào cùng một đội chỉ nhận lần đầu.
+
+Chọn bản lưu và bấm **Mở lại / nhận logo mới** để nạp các ảnh đã nhận vào Studio, rồi tiếp tục chỉnh sửa/xuất. Lưu backup tạo bản mới, không ghi đè bản cũ. Có thể đóng/mở nhận logo cho từng link. Người có link xem được tên đội và trạng thái có logo; không được xem ảnh trong backup hoặc dữ liệu quản trị.
+
+Giới hạn mỗi bản: 200 đội, 400 logo, 24 MB; mỗi ảnh PNG đã xử lý tối đa 2 MB. Người gửi có thể chọn PNG/JPG/WebP dưới 10 MB; trình duyệt chuyển thành PNG tối đa 1000 px. Ảnh backup từ Studio được giữ tối đa 1600 px để phục vụ đầu ra 1000 px. Không có reset tự động cho bảng backup.

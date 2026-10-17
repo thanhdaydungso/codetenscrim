@@ -24,7 +24,15 @@ class SupabaseStorage {
     }
     if (!response.ok) {
       const detail = await response.json().catch(() => ({}));
+      const logoErrors = {
+        LOGO_NOT_FOUND:[404,'Không tìm thấy bảng logo.'], LOGO_CLOSED:[409,'Link đã đóng nhận logo.'],
+        LOGO_ASSIGNED:[409,'Đội này đã có logo. Hãy tải lại bảng.'], LOGO_BAD_SLOT:[400,'Đội không hợp lệ.'],
+        LOGO_FULL:[413,'Bảng đã đầy. Hãy liên hệ BTC.']
+      };
+      const logoError=logoErrors[detail.message];
+      if(logoError)throw Object.assign(new Error(logoError[1]),{status:logoError[0]});
       const conflict = String(detail.message).includes('SCRIM_CONFLICT');
+      if(name === 'scrim_logo_board' && detail.code === 'PGRST202') throw Object.assign(new Error('Chạy supabase/logo-boards.sql trong SQL Editor để bật backup logo.'),{status:503});
       const missing = detail.code === 'PGRST202' || detail.code === '42P01';
       const message = conflict ? 'Dữ liệu vừa thay đổi ở phiên khác. Hãy tải lại và thử lại.'
         : missing ? 'Chưa tạo bảng Supabase. Chạy supabase/schema.sql trong SQL Editor.'

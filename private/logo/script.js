@@ -366,6 +366,7 @@ function render() {
   preview();
   syncEditor();
   renderManualStudio();
+  document.dispatchEvent(new Event('logo-board-change'));
 }
 function drawImageFit(ctx, img, x, y, width, height, cover) {
   const imageWidth = img.naturalWidth || img.width;

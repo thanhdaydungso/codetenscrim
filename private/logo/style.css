@@ -111,3 +111,7 @@ body.logo-page {
 .logo-page #goldBorder { font-family: var(--font-body); font-size: 13px; font-weight: 500; }
 .logo-page #download { font-family: var(--font-body); font-size: 15px; font-weight: 600; }
 .logo-page #status { font-family: var(--font-body); font-size: 14px; font-weight: 500; }
+
+.logo-backup { margin-top: 20px; padding-top: 16px; border-top: 1px solid #343740; display: grid; gap: 10px; min-width: 0; }
+.logo-backup input, .logo-backup select { width: 100%; min-width: 0; box-sizing: border-box; }
+.logo-backup h3, .logo-backup p { margin: 0; }
