@@ -30,7 +30,7 @@ async function findFreePort() {
 async function startServer() {
   serverProcess = spawn(process.execPath, ['server.js'], {
     cwd: ROOT,
-    env: { ...process.env, PORT: String(port), ADMIN_KEY: 'test-export-secret', DATA_DIR: TEST_DATA },
+    env: { ...process.env, PORT: String(port), ADMIN_KEY: 'test-export-secret', DATA_DIR: TEST_DATA, DATA_BACKEND: 'json' },
     stdio: 'ignore'
   });
   for (let attempt = 0; attempt < 50; attempt += 1) {
@@ -241,7 +241,7 @@ async function run() {
     writeJsonAtomic: async (file, value) => fs.writeFileSync(file, JSON.stringify(value)),
     setTimeout: callback => { dailyCallback = callback; }
   };
-  require('vm').runInNewContext(source.slice(source.indexOf('function scheduleDailyReset()'), source.indexOf('ensureStorage().then(')) + '\nscheduleDailyReset();', context);
+  require('vm').runInNewContext(source.slice(source.indexOf('function scheduleDailyReset()'), source.indexOf('(storage ? storage.run(ensureStorage)')) + '\nscheduleDailyReset();', context);
   await dailyCallback();
   assert(JSON.parse(fs.readFileSync(storedTeamsFile, 'utf8')).length === 0, 'Daily reset kept team/player data');
   assert(fs.readFileSync(customsFile, 'utf8') === beforeReset, 'Daily reset changed custom definitions');

@@ -13,7 +13,7 @@ async function freePort(){return new Promise(resolve=>{const s=net.createServer(
   const data=path.join(temp,'data');fs.mkdirSync(data);
   fs.writeFileSync(path.join(data,'customs.json'),JSON.stringify([{id:'MP',name:'MP',teamRegion:'SCRIM MP',color:'#30F708',locked:false},{id:'HV',name:'HV',teamRegion:'SCRIM HV',color:'#FFFFFF',locked:false}]));
   const port=await freePort(),debug=await freePort(),base='http://127.0.0.1:'+port;
-  const server=spawn(process.execPath,['server.js'],{cwd:root,env:{...process.env,PORT:String(port),DATA_DIR:data,ADMIN_KEY:'ui-test-secret'},stdio:'ignore',windowsHide:true});
+  const server=spawn(process.execPath,['server.js'],{cwd:root,env:{...process.env,PORT:String(port),DATA_DIR:data,DATA_BACKEND:'json',ADMIN_KEY:'ui-test-secret'},stdio:'ignore',windowsHide:true});
   let browser,ws;
   try {
     async function until(fn,label){for(let i=0;i<150;i++){try{const value=await fn();if(value)return value;}catch{}await delay(100);}throw Error('Timed out: '+label);}

@@ -9,13 +9,15 @@ const { URL } = require('url');
 const { nextVietnamReset } = require('./reset-schedule');
 
 // Đọc .env nếu có (không cần thư viện ngoài)
-try {
-  const envFile = path.join(__dirname, '.env');
-  fs.readFileSync(envFile, 'utf8').split(/\r?\n/).forEach(line => {
-    const match = line.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*)\s*$/);
-    if (match && !process.env[match[1]]) process.env[match[1]] = match[2];
-  });
-} catch {}
+for (const envName of ['.env.local', '.env']) {
+  try {
+    const envFile = path.join(__dirname, envName);
+    fs.readFileSync(envFile, 'utf8').split(/\r?\n/).forEach(line => {
+      const match = line.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*)\s*$/);
+      if (match && !process.env[match[1]]) process.env[match[1]] = match[2];
+    });
+  } catch {}
+}
 
 const PORT = Number(process.env.PORT || 3000);
 const ADMIN_KEY = String(process.env.ADMIN_KEY || 'change-me');
@@ -41,6 +43,18 @@ const MIME = {
 
 const sessions = new Map();
 let writeQueue = Promise.resolve();
+const backend = process.env.DATA_BACKEND || 'supabase';
+if (!['supabase', 'json'].includes(backend)) throw new Error('DATA_BACKEND không hợp lệ.');
+const storage = backend === 'supabase'
+  ? new (require('./supabase-storage').SupabaseStorage)({ url: process.env.SUPABASE_URL, secret: process.env.SUPABASE_SECRET_KEY })
+  : null;
+function readData(file, fallback) {
+  return storage ? storage.read(file === TEAM_FILE ? 'teams' : 'customs') : readJson(file, fallback);
+}
+function readSeed(file, fallback) {
+  try { return JSON.parse(fs.readFileSync(file, 'utf8')); }
+  catch (error) { if (error.code === 'ENOENT') return fallback; throw error; }
+}
 
 function defaultConfig() {
   return {
@@ -66,15 +80,22 @@ function initialCustoms() {
 }
 
 async function ensureStorage() {
-  await fsp.mkdir(DATA_DIR, { recursive: true });
-  await fsp.mkdir(BACKUP_DIR, { recursive: true });
-  for (const [file, fallback] of [[TEAM_FILE, []], [CUSTOM_FILE, initialCustoms()]]) {
-    try { await fsp.access(file); }
-    catch { await writeJsonAtomic(file, fallback); }
+  if (storage) {
+    // Existing cloud data always wins. Import JSON only when initializing an empty database.
+    if (!await storage.rpc('scrim_read')) {
+      await storage.initialize(readSeed(CUSTOM_FILE, initialCustoms()), readSeed(TEAM_FILE, []));
+    }
+  } else {
+    await fsp.mkdir(DATA_DIR, { recursive: true });
+    await fsp.mkdir(BACKUP_DIR, { recursive: true });
+    for (const [file, fallback] of [[TEAM_FILE, []], [CUSTOM_FILE, initialCustoms()]]) {
+      try { await fsp.access(file); }
+      catch { await writeJsonAtomic(file, fallback); }
+    }
   }
   const cfg = config();
-  const storedTeams = readJson(TEAM_FILE, []);
-  const storedCustoms = readJson(CUSTOM_FILE, initialCustoms());
+  const storedTeams = await readData(TEAM_FILE, []);
+  const storedCustoms = await readData(CUSTOM_FILE, initialCustoms());
   let changed = false;
   const migratedTeams = storedTeams.map((team, index) => {
     const customId = normalizeCustomId(team.customId || team.region || cfg.defaultRegion || 'HV');
@@ -134,18 +155,21 @@ function readJson(file, fallback) {
 }
 
 async function writeJsonAtomic(file, value) {
+  if (storage && (file === TEAM_FILE || file === CUSTOM_FILE)) return storage.write(file === TEAM_FILE ? 'teams' : 'customs', value);
   const temp = `${file}.${process.pid}.${crypto.randomBytes(4).toString('hex')}.tmp`;
   await fsp.writeFile(temp, JSON.stringify(value, null, 2), 'utf8');
   await fsp.rename(temp, file);
 }
 
 function withWriteLock(action) {
-  const next = writeQueue.then(action, action);
+  const run = () => storage ? storage.run(action) : action();
+  const next = writeQueue.then(run, run);
   writeQueue = next.catch(() => {});
   return next;
 }
 
 async function backupFiles(label) {
+  if (storage) return storage.backup(label);
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   await fsp.mkdir(BACKUP_DIR, { recursive: true });
   for (const file of [TEAM_FILE, CUSTOM_FILE]) {
@@ -461,8 +485,8 @@ function serveStatic(req, res, url) {
 }
 
 async function handlePublicApi(req, res, url, cfg) {
-  const teams = readJson(TEAM_FILE, []);
-  const customs = readJson(CUSTOM_FILE, initialCustoms());
+  const teams = await readData(TEAM_FILE, []);
+  const customs = await readData(CUSTOM_FILE, initialCustoms());
 
   if (req.method === 'GET' && url.pathname === '/api/config') {
     return apiSuccess(res, 200, 'Đã tải cấu hình.', {
@@ -488,8 +512,8 @@ async function handlePublicApi(req, res, url, cfg) {
   if (req.method === 'POST' && url.pathname === '/api/submissions') {
     const body = await parseBody(req);
     return withWriteLock(async () => {
-      const latestTeams = readJson(TEAM_FILE, []);
-      const latestCustoms = readJson(CUSTOM_FILE, initialCustoms());
+      const latestTeams = await readData(TEAM_FILE, []);
+      const latestCustoms = await readData(CUSTOM_FILE, initialCustoms());
       const checked = validateTeamInput(body, cfg);
       if (checked.errors.length) return apiError(res, 400, 'Thông tin đội chưa hợp lệ.', checked.errors);
       const custom = latestCustoms.find(item => item.id === checked.value.customId);
@@ -529,8 +553,8 @@ async function handlePublicApi(req, res, url, cfg) {
   if (editMatch && req.method === 'PUT') {
     const body = await parseBody(req);
     return withWriteLock(async () => {
-      const latestTeams = readJson(TEAM_FILE, []);
-      const latestCustoms = readJson(CUSTOM_FILE, initialCustoms());
+      const latestTeams = await readData(TEAM_FILE, []);
+      const latestCustoms = await readData(CUSTOM_FILE, initialCustoms());
       const index = latestTeams.findIndex(item => item.editToken === editMatch[1]);
       if (index < 0) return apiError(res, 404, 'Mã chỉnh sửa không hợp lệ.');
       const current = latestTeams[index];
@@ -579,8 +603,8 @@ async function handleAdminApi(req, res, url, cfg) {
 
   if (!adminSession(req)) return apiError(res, 401, 'Phiên đăng nhập đã hết hạn.');
 
-  const teams = readJson(TEAM_FILE, []);
-  const customs = readJson(CUSTOM_FILE, initialCustoms());
+  const teams = await readData(TEAM_FILE, []);
+  const customs = await readData(CUSTOM_FILE, initialCustoms());
 
   if (req.method === 'GET' && url.pathname === '/api/admin/customs') {
     return apiSuccess(res, 200, 'Đã tải dữ liệu quản trị.', customs.map(item => publicCustom(item, teams, cfg)));
@@ -589,7 +613,7 @@ async function handleAdminApi(req, res, url, cfg) {
   if (req.method === 'POST' && url.pathname === '/api/admin/customs') {
     const body = await parseBody(req);
     return withWriteLock(async () => {
-      const latest = readJson(CUSTOM_FILE, initialCustoms());
+      const latest = await readData(CUSTOM_FILE, initialCustoms());
       const name = cleanText(body.name || body.teamRegion, 30);
       const id = normalizeCustomId(body.id || name);
       if (name.length < 2 || !id) return apiError(res, 400, 'Tên custom phải có ít nhất 2 ký tự.');
@@ -617,7 +641,7 @@ async function handleAdminApi(req, res, url, cfg) {
     const id = normalizeCustomId(decodeURIComponent(customMatch[1]));
     const body = await parseBody(req);
     return withWriteLock(async () => {
-      const latest = readJson(CUSTOM_FILE, initialCustoms());
+      const latest = await readData(CUSTOM_FILE, initialCustoms());
       const index = latest.findIndex(item => item.id === id);
       if (index < 0) return apiError(res, 404, 'Không tìm thấy custom.');
       latest[index] = {
@@ -651,8 +675,8 @@ async function handleAdminApi(req, res, url, cfg) {
     const body = await parseBody(req);
     const id = decodeURIComponent(teamMatch[1]);
     return withWriteLock(async () => {
-      const latestTeams = readJson(TEAM_FILE, []);
-      const latestCustoms = readJson(CUSTOM_FILE, initialCustoms());
+      const latestTeams = await readData(TEAM_FILE, []);
+      const latestCustoms = await readData(CUSTOM_FILE, initialCustoms());
       const index = latestTeams.findIndex(team => team.id === id);
       if (index < 0) return apiError(res, 404, 'Không tìm thấy team.');
       const current = latestTeams[index];
@@ -684,7 +708,7 @@ async function handleAdminApi(req, res, url, cfg) {
   if (teamMatch && req.method === 'DELETE') {
     const id = decodeURIComponent(teamMatch[1]);
     return withWriteLock(async () => {
-      const latest = readJson(TEAM_FILE, []);
+      const latest = await readData(TEAM_FILE, []);
       if (!latest.some(team => team.id === id)) return apiError(res, 404, 'Không tìm thấy team.');
       await backupFiles(`delete-team-${id}`);
       await writeJsonAtomic(TEAM_FILE, latest.filter(team => team.id !== id));
@@ -698,8 +722,8 @@ async function handleAdminApi(req, res, url, cfg) {
     const inputs = Array.isArray(body.teams) ? body.teams : [];
     if (!inputs.length) return apiError(res, 400, 'Chưa có team để nạp.');
     return withWriteLock(async () => {
-      const latestTeams = readJson(TEAM_FILE, []);
-      const latestCustoms = readJson(CUSTOM_FILE, initialCustoms());
+      const latestTeams = await readData(TEAM_FILE, []);
+      const latestCustoms = await readData(CUSTOM_FILE, initialCustoms());
       const custom = latestCustoms.find(item => item.id === targetId);
       if (!custom) return apiError(res, 404, 'Custom không tồn tại.');
       const staged = [];
@@ -728,9 +752,10 @@ async function handleAdminApi(req, res, url, cfg) {
   const exportMatch = url.pathname.match(/^\/api\/admin\/export\/([^/]+)$/);
   if (req.method === 'GET' && exportMatch) {
     await writeQueue.catch(() => {});
+    if (storage) storage.refresh();
     const id = normalizeCustomId(decodeURIComponent(exportMatch[1]));
-    const latestCustoms = readJson(CUSTOM_FILE, initialCustoms());
-    const latestTeams = readJson(TEAM_FILE, []);
+    const latestCustoms = await readData(CUSTOM_FILE, initialCustoms());
+    const latestTeams = await readData(TEAM_FILE, []);
     const custom = latestCustoms.find(item => item.id === id);
     if (!custom) return apiError(res, 404, 'Không tìm thấy custom.');
     const prepared = prepareExport(custom, latestTeams, cfg);
@@ -742,9 +767,10 @@ async function handleAdminApi(req, res, url, cfg) {
   const previewMatch = url.pathname.match(/^\/api\/admin\/export-preview\/([^/]+)$/);
   if (req.method === 'GET' && previewMatch) {
     await writeQueue.catch(() => {});
+    if (storage) storage.refresh();
     const id = normalizeCustomId(decodeURIComponent(previewMatch[1]));
-    const latestCustoms = readJson(CUSTOM_FILE, initialCustoms());
-    const latestTeams = readJson(TEAM_FILE, []);
+    const latestCustoms = await readData(CUSTOM_FILE, initialCustoms());
+    const latestTeams = await readData(TEAM_FILE, []);
     const custom = latestCustoms.find(item => item.id === id);
     if (!custom) return apiError(res, 404, 'Không tìm thấy custom.');
     const prepared = prepareExport(custom, latestTeams, cfg);
@@ -764,8 +790,9 @@ async function handleAdminApi(req, res, url, cfg) {
 
   if (req.method === 'GET' && url.pathname === '/api/admin/export-all') {
     await writeQueue.catch(() => {});
-    const latestCustoms = readJson(CUSTOM_FILE, initialCustoms());
-    const latestTeams = readJson(TEAM_FILE, []);
+    if (storage) storage.refresh();
+    const latestCustoms = await readData(CUSTOM_FILE, initialCustoms());
+    const latestTeams = await readData(TEAM_FILE, []);
     const approved = latestTeams.filter(team => team.status === 'approved');
     const activeCustomIds = [...new Set(approved.map(team => team.customId))];
     const preparedByCustom = new Map();
@@ -808,7 +835,7 @@ async function handleAdminApi(req, res, url, cfg) {
   if (clearMatch && req.method === 'DELETE') {
     const id = normalizeCustomId(decodeURIComponent(clearMatch[1]));
     return withWriteLock(async () => {
-      const latest = readJson(TEAM_FILE, []);
+      const latest = await readData(TEAM_FILE, []);
       await backupFiles(`clear-custom-${id}`);
       await writeJsonAtomic(TEAM_FILE, latest.filter(team => team.customId !== id));
       return apiSuccess(res, 200, 'Đã RS team/player. Giữ nguyên custom và cấu hình; đã tạo bản sao lưu.');
@@ -847,7 +874,7 @@ function serveLogo(req, res, url) {
   });
 }
 
-const server = http.createServer(async (req, res) => {
+async function handleRequest(req, res) {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const cfg = config();
   try {
@@ -869,7 +896,8 @@ const server = http.createServer(async (req, res) => {
     console.error(error);
     return apiError(res, error.status || 500, error.status ? error.message : 'Máy chủ gặp lỗi. Vui lòng thử lại.');
   }
-});
+}
+const server = http.createServer((req, res) => storage ? storage.run(() => handleRequest(req, res)) : handleRequest(req, res));
 
 // Reset team/player lúc 4:00 sáng; giữ nguyên customs.json và cấu hình custom.
 function scheduleDailyReset() {
@@ -891,7 +919,7 @@ function scheduleDailyReset() {
   }, msUntil);
 }
 
-ensureStorage().then(() => {
+(storage ? storage.run(ensureStorage) : ensureStorage()).then(() => {
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`Web đang chạy tại http://localhost:${PORT}`);
     console.log(`Trang quản trị: http://localhost:${PORT}/admin`);

@@ -6,10 +6,13 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test": "node tests/export-flow.test.js && node tests/logo-bundle.test.js",
+    "test": "node tests/export-flow.test.js && node tests/logo-bundle.test.js && node tests/supabase-storage.test.js",
     "test:ui": "node tests/ui-smoke.test.js"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@supabase/server": "^1.9.2"
   }
 }

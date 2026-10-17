@@ -4,7 +4,7 @@ Website Node.js thuần để đội thi đấu chọn custom, gửi/cập nhậ
 
 ## Chạy dự án
 
-Yêu cầu Node.js 18 trở lên.
+Yêu cầu Node.js 22 trở lên.
 
 ```powershell
 npm install
@@ -20,33 +20,38 @@ Không dùng giá trị mặc định `change-me` khi triển khai thật.
 
 ## Cấu hình
 
-`config.json` chứa tên website, số slot, giới hạn thành viên và màu mặc định. Bốn custom `HV`, `MP`, `XN`, `YN` được tạo tự động ở lần chạy đầu tiên; BTC có thể thêm/xóa/khóa custom trên bảng điều khiển.
+`config.json` chứa tên website, số slot, giới hạn thành viên và màu mặc định. Bốn custom `HV`, `MP`, `XN`, `YN` được tạo tự động ở lần chạy đầu tiên; BTC có thể thêm/sửa/khóa custom trên bảng điều khiển.
 
-## Dữ liệu
+## Dữ liệu Supabase
 
-- `data/customs.json`: custom, màu và trạng thái khóa.
-- `data/submissions.json`: team, player, trạng thái lưu và edit token.
-- `data/backups/`: bản sao tự động trước thao tác xóa.
+1. Mở Supabase SQL Editor, chạy toàn bộ [supabase/schema.sql](supabase/schema.sql).
+2. Đặt các biến trong [.env.example](.env.example) vào cấu hình hosting: DATA_BACKEND=supabase, SUPABASE_URL, SUPABASE_SECRET_KEY và ADMIN_KEY. Chạy trên máy dùng .env.local, được Git bỏ qua. Biến môi trường hosting có ưu tiên cao nhất.
+3. Chạy npm start. Lần đầu, nếu database chưa khởi tạo, server chuyển data/customs.json và data/submissions.json hiện có lên Supabase. Muốn chuyển dữ liệu đang chạy trên hosting cũ, cần dùng đúng hai file mới nhất của hosting đó trước lần khởi tạo này.
+4. Những lần khởi động/deploy sau chỉ dùng dữ liệu trên Supabase, không ghi đè bằng file JSON trong repo.
 
-Mọi lần ghi dùng file tạm rồi rename và được xếp hàng tuần tự. Lớp lưu trữ có thể đổi thư mục qua biến `DATA_DIR`.
+Bảng scrim_state chứa custom và team/player dạng JSONB, giữ nguyên cấu trúc game và edit token. Mỗi yêu cầu đọc một snapshot. Mỗi lần ghi kiểm tra revision trong giao dịch PostgreSQL; nếu phiên khác vừa cập nhật, API trả 409 để người dùng tải lại, tránh ghi đè dữ liệu. Bảng scrim_backups giữ bản sao trước khi xóa team, RS hoặc migration.
 
-Trên Render hoặc nền tảng có filesystem tạm, hãy gắn Persistent Disk và đặt `DATA_DIR` vào đường dẫn của disk. Khi cần nhiều instance, nên chuyển lớp lưu trữ sang PostgreSQL để khóa giao dịch và lưu bền vững.
+Các bảng bật RLS, không cấp quyền cho anon/authenticated. Chỉ backend dùng secret key gọi RPC; không đưa secret vào frontend hoặc GitHub. Publishable key và JWKS URL chưa cần dùng vì đăng nhập BTC vẫn qua session cookie.
+
+Khi lỗi kết nối, thiếu quyền hoặc thiếu schema, server báo lỗi và không tự quay về file JSON. DATA_BACKEND=json chỉ dành cho phát triển offline và kiểm thử; DATA_DIR chọn thư mục file như trước.
+
+Custom đã thêm được giữ cố định, không cho xóa. Có thể khóa nhận hoặc RS team/player. Reset tự động và thủ công chỉ cập nhật danh sách team, giữ nguyên custom và các thiết lập.
 
 ## API chính
 
 Public: `/api/customs`, `/api/customs/:id`, `/api/submissions`, `/api/submissions/:editToken`.
 
-Admin: đăng nhập tại `/api/admin/login`; các API còn lại dùng session cookie HttpOnly, không lưu mật khẩu ở frontend. Bảng BTC hỗ trợ CRUD custom/team, import nhiều team và export theo custom hoặc toàn bộ.
+Admin: đăng nhập tại `/api/admin/login`; các API còn lại dùng session cookie HttpOnly, không lưu mật khẩu ở frontend. Bảng BTC hỗ trợ thêm/sửa/khóa custom và quản lý team, import nhiều team và export theo custom hoặc toàn bộ.
 
 ## Nguồn dữ liệu export
 
-Mỗi lần BTC tải `PlayerNameOverwrite.json`, backend chờ các thao tác ghi đang chạy hoàn tất rồi đọc mới `data/submissions.json` và `data/customs.json`. File được tạo trong bộ nhớ và trả trực tiếp với `Cache-Control: no-store`; không có file mẫu hoặc mảng dữ liệu export viết cứng.
+Mỗi lần BTC tải `PlayerNameOverwrite.json`, backend chờ các thao tác ghi đang chạy hoàn tất rồi đọc snapshot mới từ Supabase (hoặc file JSON khi chạy offline). File được tạo trong bộ nhớ và trả trực tiếp với `Cache-Control: no-store`; không có file mẫu hoặc mảng dữ liệu export viết cứng.
 
 Team gửi hoặc cập nhật code tên được tự động lưu với trạng thái `approved`, không cần BTC duyệt thủ công, và được đưa vào lần export kế tiếp. API sẽ chặn tải khi PlayerID không hợp lệ, vượt `Number.MAX_SAFE_INTEGER` hoặc thuộc nhiều team. Trang BTC hiển thị thời gian đồng bộ, số team/player, số xung đột và bản xem trước dữ liệu.
 
 Định dạng game chỉ có 15 `TeamID`, vì vậy `export-all` chỉ tạo file khi dữ liệu đã lưu thuộc đúng một custom. Nếu có nhiều custom, BTC phải chọn từng custom để tránh tạo `TeamID` trùng trong cùng file.
 
-Reset lúc 04:00 giờ Việt Nam chỉ xóa team/player trong `submissions.json`. Danh sách custom, tên, màu, TeamRegion và trạng thái khóa trong `customs.json` được giữ nguyên, kể cả custom do BTC thêm. Nút RS team/player của một custom cũng giữ lại custom đó. Chỉ thao tác xóa custom mới xóa custom khỏi danh sách.
+Reset lúc 04:00 giờ Việt Nam chỉ xóa team/player. Danh sách custom, tên, màu, TeamRegion và trạng thái khóa được giữ nguyên, kể cả custom mới thêm. Nút RS team/player cũng giữ lại custom. Không cho phép xóa custom.
 
 ## Giao diện và kiểm tra
 
