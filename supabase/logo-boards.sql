@@ -22,21 +22,30 @@ update public.scrim_logo_boards s set accepting=exists(select 1 from jsonb_array
 alter table public.scrim_logo_boards enable row level security;
 revoke all on public.scrim_logo_boards from public, anon, authenticated, service_role;
 create or replace function public.scrim_logo_board(operation text, board_id uuid default null, share_token text default null, payload jsonb default null)
-returns jsonb language plpgsql security definer set search_path = '' as $$
+returns jsonb language plpgsql security definer set search_path = '' set statement_timeout = '60s' as $
 declare board public.scrim_logo_boards; result jsonb; slot integer;
 begin
- delete from public.scrim_logo_boards where expires_at<=clock_timestamp();
- if operation='cleanup' then return '{"cleaned":true}'::jsonb; end if;
+ if operation='health' then return jsonb_build_object('statementTimeout',current_setting('statement_timeout'),'lockFreeReads',true); end if;
+ if operation='cleanup' then
+   delete from public.scrim_logo_boards where expires_at<=clock_timestamp();
+   return '{"cleaned":true}'::jsonb;
+ end if;
  if operation='list' then
-   select coalesce(jsonb_agg(jsonb_build_object('id',s.id,'name',s.name,'token',s.token,'accepting',s.accepting,'updated_at',s.updated_at,'expires_at',s.expires_at,'teamCount',jsonb_array_length(s.data->'teams'),'missing',(select count(*) from jsonb_array_elements(s.data->'assignments') a where a='-1'::jsonb)) order by s.updated_at desc),'[]'::jsonb) into result from public.scrim_logo_boards s;
+   select coalesce(jsonb_agg(jsonb_build_object('id',s.id,'name',s.name,'token',s.token,'accepting',s.accepting,'updated_at',s.updated_at,'expires_at',s.expires_at,'teamCount',jsonb_array_length(s.data->'teams'),'missing',(select count(*) from jsonb_array_elements(s.data->'assignments') a where a='-1'::jsonb)) order by s.updated_at desc),'[]'::jsonb) into result from public.scrim_logo_boards s where s.expires_at>clock_timestamp();
    return result;
  elsif operation='create' then
    insert into public.scrim_logo_boards(id,name,data,accepting) values(coalesce((payload->>'requestId')::uuid,gen_random_uuid()),payload->>'name',payload->'data',exists(select 1 from jsonb_array_elements(payload->'data'->'assignments') a where a='-1'::jsonb)) on conflict(id) do nothing returning * into board;
    if not found then select * into board from public.scrim_logo_boards s where s.id=(payload->>'requestId')::uuid; end if;
    return jsonb_build_object('id',board.id,'name',board.name,'token',board.token,'accepting',board.accepting,'expires_at',board.expires_at,'updated_at',board.updated_at,'teamCount',jsonb_array_length(board.data->'teams'),'missing',(select count(*) from jsonb_array_elements(board.data->'assignments') a where a='-1'::jsonb));
  end if;
- select * into board from public.scrim_logo_boards s where
-   (share_token is not null and s.token=share_token) or (share_token is null and s.id=board_id) for update;
+ -- Only submission needs a row lock. Reads must not block while a large logo uploads.
+ if operation='submit' then
+   select * into board from public.scrim_logo_boards s where
+     (share_token is not null and s.token=share_token) or (share_token is null and s.id=board_id) for update;
+ else
+   select * into board from public.scrim_logo_boards s where
+     (share_token is not null and s.token=share_token) or (share_token is null and s.id=board_id);
+ end if;
  if not found or board.expires_at<=clock_timestamp() then raise exception 'LOGO_NOT_FOUND'; end if;
  if operation='read' then return to_jsonb(board);
  elsif operation='public' then
@@ -68,3 +77,4 @@ select cron.schedule('scrim-logo-backup-expiry','* * * * *',
   $cleanup$delete from public.scrim_logo_boards where expires_at<=clock_timestamp();$cleanup$);
 commit;
 notify pgrst,'reload schema';
+notify pgrst,'reload config';
