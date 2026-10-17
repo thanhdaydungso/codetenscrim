@@ -74,3 +74,5 @@ Giới hạn mỗi bản: 200 đội, 400 logo, 100 MB; mỗi ảnh PNG đã x�
 Mỗi trình duyệt chỉ gửi thành công một logo cho mỗi bản lưu. Backend dùng cookie ký và danh sách mã người gửi trong Supabase để chặn gửi lại, kể cả hai lần gửi đồng thời vào hai đội khác nhau. Không đăng nhập nên người đổi trình duyệt/thiết bị hoặc xóa cookie vẫn có thể được nhận diện là người mới. Chạy lại supabase/logo-boards.sql khi nâng cấp.
 
 Hàm scrim_logo_board có thời gian xử lý riêng 60 giây. Chỉ thao tác gửi logo khóa hàng; đọc danh sách/mở bảng không giữ khóa ghi và không chạy dọn dữ liệu hết hạn. Cron hoặc thao tác cleanup xử lý việc xóa backup hết hạn độc lập. Chạy lại supabase/logo-boards.sql để áp dụng thay đổi database này.
+
+Có thể đặt thêm ADMIN_KEY_2 để dùng mật khẩu quản trị thứ hai. Cả ADMIN_KEY và ADMIN_KEY_2 đều tạo phiên BTC với cùng quyền. Để trống ADMIN_KEY_2 sẽ tắt mật khẩu thứ hai. Trên Render đặt biến này trong Environment; trên máy dùng .env.local, không commit mật khẩu vào Git.

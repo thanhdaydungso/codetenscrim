@@ -20,6 +20,7 @@ for (const envName of ['.env.local', '.env']) {
 
 const PORT = Number(process.env.PORT || 3000);
 const ADMIN_KEY = String(process.env.ADMIN_KEY || 'change-me');
+const ADMIN_KEY_2 = String(process.env.ADMIN_KEY_2 || '');
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, 'public');
 const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(ROOT, 'data'));
@@ -606,7 +607,7 @@ async function handlePublicApi(req, res, url, cfg) {
 async function handleAdminApi(req, res, url, cfg) {
   if (req.method === 'POST' && url.pathname === '/api/admin/login') {
     const body = await parseBody(req);
-    if (!ADMIN_KEY || !safeEqual(body.key || body.password, ADMIN_KEY)) {
+    if (![ADMIN_KEY, ADMIN_KEY_2].filter(Boolean).some(key => safeEqual(body.key || body.password, key))) {
       return apiError(res, 401, 'Mật khẩu quản trị không đúng.');
     }
     const token = crypto.randomBytes(32).toString('hex');

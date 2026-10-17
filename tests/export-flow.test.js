@@ -30,7 +30,7 @@ async function findFreePort() {
 async function startServer() {
   serverProcess = spawn(process.execPath, ['server.js'], {
     cwd: ROOT,
-    env: { ...process.env, PORT: String(port), ADMIN_KEY: 'test-export-secret', DATA_DIR: TEST_DATA, DATA_BACKEND: 'json' },
+    env: { ...process.env, PORT: String(port), ADMIN_KEY: 'test-export-secret', ADMIN_KEY_2: 'test-secondary-secret', DATA_DIR: TEST_DATA, DATA_BACKEND: 'json' },
     stdio: 'ignore'
   });
   for (let attempt = 0; attempt < 50; attempt += 1) {
@@ -93,6 +93,14 @@ async function run() {
   baseUrl = `http://127.0.0.1:${port}`;
   await startServer();
   let cookie = await login();
+  const secondary = await request('/api/admin/login', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:'test-secondary-secret'})});
+  assert(secondary.response.status === 200, 'Secondary password must allow admin login');
+  const secondaryCookie = secondary.response.headers.get('set-cookie').split(';')[0];
+  assert((await admin('/api/admin/session', secondaryCookie)).response.status === 200, 'Secondary login must create a valid admin session');
+  for(const password of ['', 'incorrect-password']) {
+    const rejected = await request('/api/admin/login', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password})});
+    assert(rejected.response.status === 401, 'Invalid password must be rejected');
+  }
   const logoPaths = ['/logo', '/admin/logo', '/logo/', '/logo/index.html', '/logo/style.css', '/logo/script.js', '/logo/avatars_b64.js', '/logo/logo-bundle.js', '/logo/avatars/Andrew.png', '/logo/avatars/Kelly.png'];
   for (const route of logoPaths) {
     for (const headers of [{}, { Cookie: 'btc_session=invalid' }]) {
