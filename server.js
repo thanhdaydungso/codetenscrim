@@ -620,7 +620,8 @@ async function handleAdminApi(req, res, url, cfg) {
     if(req.method==='POST'){
       const body=await parseBody(req,101_000_000);
       const data=validateBoard(body.data);
-      const name=cleanText(body.name,100)||'Bảng logo';
+      const name=cleanText(body.name,100);
+      if(!name)return apiError(res,400,'Hãy nhập tên bản lưu.');
       return apiSuccess(res,201,'Đã lưu backup logo.',await logoBoards.call('create',{payload:{name,data}}));
     }
   }
@@ -628,9 +629,7 @@ async function handleAdminApi(req, res, url, cfg) {
   if(boardMatch){
     if(req.method==='GET')return apiSuccess(res,200,'Đã mở backup logo.',await logoBoards.call('read',{id:boardMatch[1]}));
     if(req.method==='PATCH'){
-      const body=await parseBody(req);
-      if(typeof body.accepting!=='boolean')return apiError(res,400,'Trạng thái link không hợp lệ.');
-      return apiSuccess(res,200,'Đã cập nhật link nhận logo.',await logoBoards.call('close',{id:boardMatch[1],payload:{accepting:body.accepting}}));
+      return apiError(res,405,'Link tự mở khi thiếu logo và tự khóa khi đủ logo.');
     }
   }
 

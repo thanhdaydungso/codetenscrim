@@ -49,13 +49,16 @@ async function request(url,{cookie,body,method='GET'}={}){const response=await f
   assert.deepEqual(simultaneous.map(r=>r.status).sort(),[201,409]);
   result=await request('/api/admin/logo-boards/'+board.id,{cookie});assert.equal(result.body.data.data.assignments[0],0);assert.equal(result.body.data.data.assignments[1],1);assert.equal(result.body.data.data.logos.length,2);
   result=await request('/api/admin/logo-boards',{cookie});assert.equal(result.body.data[0].missing,1);
-  await request('/api/admin/logo-boards/'+board.id,{cookie,method:'PATCH',body:{accepting:false}});
-  result=await request(share,{method:'POST',body:{slot:2,image}});assert.equal(result.status,409);
-  result=await request(share);assert.equal(result.body.data.accepting,false);
-  await stop();await start(dataDir);cookie=await login();
-  result=await request('/api/admin/logo-boards/'+board.id,{cookie});assert.equal(result.body.data.data.logos.length,2);assert.equal(result.body.data.accepting,false);
-  await request('/api/admin/logo-boards/'+board.id,{cookie,method:'PATCH',body:{accepting:true}});
+  result=await request('/api/admin/logo-boards/'+board.id,{cookie,method:'PATCH',body:{accepting:false}});assert.equal(result.status,405);
+  result=await request(share);assert.equal(result.body.data.accepting,true);
   result=await request(share,{method:'POST',body:{slot:2,image}});assert.equal(result.status,201);
+  result=await request(share);assert.equal(result.body.data.accepting,false,'Last logo must auto-lock link');
+  result=await request(share,{method:'POST',body:{slot:2,image}});assert.equal(result.status,409);
+  await stop();await start(dataDir);cookie=await login();
+  result=await request('/api/admin/logo-boards/'+board.id,{cookie});assert.equal(result.body.data.data.logos.length,3);assert.equal(result.body.data.accepting,false);
+  result=await request('/api/admin/logo-boards/'+board.id,{cookie,method:'PATCH',body:{accepting:true}});assert.equal(result.status,405,'Cannot reopen complete board');
+  result=await request('/api/admin/logo-boards',{cookie,method:'POST',body:{name:'',data:original}});assert.equal(result.status,400,'Backup name is required');
+  result=await request('/api/admin/logo-boards',{cookie,method:'POST',body:{name:'ĐÃ ĐỦ LOGO',data:{...original,assignments:[0,0,0]}}});assert.equal(result.status,201);assert.equal(result.body.data.name,'ĐÃ ĐỦ LOGO');assert.equal(result.body.data.accepting,false,'Complete boards must start locked');
   const largerBackup=await request('/api/admin/logo-boards',{cookie,method:'POST',body:{name:'Large backup',data:{...original,logos:[{name:'Large PNG',image:largeImage}]}}});
   assert.equal(largerBackup.status,201,'Large backup request should be accepted');
   // Expiration is based on creation time and is never extended by writes.
@@ -65,7 +68,7 @@ async function request(url,{cookie,body,method='GET'}={}){const response=await f
   const expires=temporary.expires_at;assert.equal(Date.parse(expires),now+7_200_000);
   now+=3_600_000;
   await expiring.call('submit',{token:temporary.token,payload:{slot:1,logo:validateLogo({image})}});
-  await expiring.call('close',{id:temporary.id,payload:{accepting:false}});
+  await assert.rejects(expiring.call('close',{id:temporary.id,payload:{accepting:false}}),e=>e.status===405);
   assert.equal((await expiring.call('read',{id:temporary.id})).expires_at,expires);
   now=Date.parse(expires)-1;assert.equal((await expiring.call('list')).length,1);
   now++;await assert.rejects(expiring.call('public',{token:temporary.token}),e=>e.status===404);
@@ -76,6 +79,6 @@ async function request(url,{cookie,body,method='GET'}={}){const response=await f
   assert.equal((await fetch(base+'/logo-submit.html')).status,200);
   assert.equal((await fetch(base+'/logo/backup.js',{redirect:'manual'})).status,302);
   assert.equal((await fetch(base+'/logo/backup.js',{headers:{Cookie:cookie}})).status,200);
-  console.log('PASS logo-boards: snapshots/settings, public submissions, occupied slots, races, close/reopen, restart, authorization, >2 MB images and 2-hour expiry.');
+  console.log('PASS logo-boards: snapshots/settings, public submissions, occupied slots, races, automatic open/lock, restart, authorization, >2 MB images and 2-hour expiry.');
  }finally{await stop();fs.rmSync(dataDir,{recursive:true,force:true});}
 })().catch(e=>{console.error(e);process.exitCode=1;});

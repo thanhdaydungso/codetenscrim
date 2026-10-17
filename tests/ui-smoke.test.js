@@ -56,6 +56,8 @@ async function freePort(){return new Promise(resolve=>{const s=net.createServer(
     await until(()=>evaluate('!!document.querySelector("#saveBoard") && !document.querySelector("#saveBoard").disabled'),'backup UI');
     await evaluate('document.querySelector("#playnameCustom").value="MP";document.querySelector("#backupName").value="UI BACKUP";document.querySelector("#saveBoard").click();');
     await until(()=>evaluate('document.querySelector("#backupLink").value.includes("#") && !document.querySelector("#restoreBoard").disabled'),'saved backup');
+    assert.equal(await evaluate('document.querySelector("#backupBoard").selectedOptions[0].textContent'),'UI BACKUP');
+    assert.equal(await evaluate('!!document.querySelector("#toggleBoardLink")'),false);
     const shareLink=await evaluate('document.querySelector("#backupLink").value');
     await send('Page.navigate',{url:shareLink});
     await until(()=>evaluate('!!document.querySelector("#teamSlot") && document.querySelector("#teamSlot").options.length===2'),'public logo form');
@@ -66,9 +68,11 @@ async function freePort(){return new Promise(resolve=>{const s=net.createServer(
     await until(()=>evaluate('document.querySelector("#shareStatus").textContent.includes("thành công")'),'public logo saved');
     await go('/logo/','!!document.querySelector("#restoreBoard")');
     await until(()=>evaluate('!document.querySelector("#restoreBoard").disabled'),'backup list');
-    await evaluate('document.querySelector("#restoreBoard").click()');
+    await evaluate('document.querySelector("#backupName").value="TÊN MỚI CỦA TÔI";document.querySelector("#restoreBoard").click()');
     await until(()=>evaluate('document.querySelectorAll("#roster tr").length===1 && document.querySelector("#stats").textContent.includes("1 đã ghép")'),'restored public logo');
     await until(()=>evaluate('document.querySelector("#playnameCustom").value==="MP"'),'restored playname custom');
+    assert.equal(await evaluate('document.querySelector("#backupName").value'),'TÊN MỚI CỦA TÔI');
+    assert.equal(await evaluate('document.querySelector("#copyBoardLink").disabled'),true);
     await fits();await screenshot('logo-backup-restored-mobile');
     await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});assert.equal(await evaluate('getComputedStyle(document.querySelector("main")).animationName'),'none');
     await go('/','document.querySelectorAll(".custom-card").length===2');

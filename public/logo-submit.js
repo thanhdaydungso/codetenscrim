@@ -17,7 +17,7 @@
     const missing=board.teams.filter(team=>!team.assigned).length;
     $('logoForm').hidden=!board.accepting||!missing;
     $('shareExpiry').textContent=board.expires_at?'Bản lưu và link tự xóa lúc '+new Date(board.expires_at).toLocaleString('vi-VN')+'.':'';
-    message(!board.accepting?'BTC đã đóng link nhận logo.':missing?missing+' đội đang chờ logo.':'Tất cả đội đã có logo.');
+    message(!missing?'Đã đủ logo. Link nhận logo đã tự khóa.':missing+' đội đang chờ logo.');
   }
   async function png(file){
     if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>10_000_000)throw Error('Chọn ảnh PNG, JPG hoặc WebP dưới 10 MB.');
@@ -31,7 +31,7 @@
   $('logoForm').onsubmit=async event=>{
     event.preventDefault();if(working)return;const file=$('logoFile').files[0],slot=$('teamSlot').value;if(!file||slot==='')return;
     working=true;$('sendLogo').disabled=true;$('refreshShare').disabled=true;
-    try{message('Đang gửi logo…');const image=await png(file);await api({method:'POST',body:JSON.stringify({slot:Number(slot),image})});$('logoFile').value='';$('logoPreview').hidden=true;await load();message('Đã gửi logo thành công. Logo được lưu vào bảng backup của BTC.');}
+    try{message('Đang gửi logo…');const image=await png(file);await api({method:'POST',body:JSON.stringify({slot:Number(slot),image})});$('logoFile').value='';$('logoPreview').hidden=true;await load();message('Đã gửi logo thành công. '+(board.accepting?'Logo được lưu vào bảng backup của BTC.':'Đã đủ logo, link nhận logo đã tự khóa.'));}
     catch(error){try{await load();}catch{}message(error.message);}
     finally{working=false;$('sendLogo').disabled=false;$('refreshShare').disabled=false;}
   };

@@ -11,13 +11,14 @@
     const board=current();const locked=working||busy||uploading;
     $('saveBoard').disabled=locked||!teams.length;
     ['reloadBoards','backupBoard','backupName'].forEach(id=>$(id).disabled=locked);
-    ['restoreBoard','copyBoardLink','toggleBoardLink'].forEach(id=>$(id).disabled=locked||!board);
+    ['restoreBoard','copyBoardLink'].forEach(id=>$(id).disabled=locked||!board);
     $('backupLink').value=board?location.origin+'/logo-submit.html#'+board.token:'';
-    $('toggleBoardLink').textContent=board?.accepting?'Đóng nhận logo':'Mở nhận logo';
+    $('copyBoardLink').disabled=locked||!board||!board.accepting;
+    $('backupDetails').textContent=board?board.missing+'/'+board.teamCount+' đội chờ logo · '+(board.accepting?'Link đang nhận logo':'Đã đủ logo — link đã khóa')+(board.expires_at?' · tự xóa lúc '+new Date(board.expires_at).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}):''):'';
   }
   async function refresh(id=$('backupBoard').value) {
     savedBoards=await api('');$('backupBoard').replaceChildren(new Option('Chọn bản lưu',''));
-    savedBoards.forEach(board=>$('backupBoard').add(new Option(board.name+(board.expires_at?' · hết hạn '+new Date(board.expires_at).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}):'')+' · '+board.missing+'/'+board.teamCount+' đội trống'+(board.accepting?'':' · đã đóng'),board.id)));
+    savedBoards.forEach(board=>$('backupBoard').add(new Option(board.name,board.id)));
     $('backupBoard').value=savedBoards.some(board=>board.id===id)?id:(savedBoards[0]?.id||'');update();
   }
   function applyCustom(){
@@ -53,8 +54,10 @@
   }
   $('saveBoard').onclick=()=>work(async()=>{
     status('Đang lưu ảnh và bảng…');
-    const data={version:1,teams,logos:logos.map(pack),assignments:teams.map((_,i)=>manualAssignments[i]?logos.indexOf(manualAssignments[i]):-1),borderColor,customId:$('playnameCustom').value,defaultLogo:customDefaultLogo?pack(customDefaultLogo):null};
-    const name=$('backupName').value.trim()||'Bảng logo '+new Date().toLocaleString('vi-VN');
+    const name=$('backupName').value.trim();if(!name)throw Error('Hãy nhập tên bản lưu trước khi lưu backup.');
+    const packed=logos.map(pack);
+    const fallbackIndex=customDefaultLogo?packed.push(pack(customDefaultLogo))-1:-1;
+    const data={version:1,teams,logos:packed,assignments:teams.map((_,i)=>manualAssignments[i]&&!manualAssignments[i].isFallback?logos.indexOf(manualAssignments[i]):fallbackIndex),borderColor,customId:$('playnameCustom').value,defaultLogo:customDefaultLogo?pack(customDefaultLogo):null};
     const board=await api('',{method:'POST',body:JSON.stringify({name,data})});await refresh(board.id);
     status('Đã lưu backup trong 2 giờ. Hết hạn sẽ tự xóa cả bản lưu và link.');
   });
@@ -69,13 +72,12 @@
       teams=data.teams;logos=restored;manualAssignments=data.assignments.map(i=>i===-1?null:restored[i]);customDefaultLogo=defaultLogo;
       borderColor=data.borderColor;defaultFlagLogo=null;syncBorderPicker();
       $('teamInput').value=teams.map(team=>[team.name,team.person,team.code].join(' | ')).join('\n');
-      $('backupName').value=saved.name;pendingCustom=data.customId||'';applyCustom();
+      pendingCustom=data.customId||'';applyCustom();
       await refresh(board.id);status('Đã mở backup: '+manualAssignments.filter(Boolean).length+'/'+teams.length+' đội có logo.');
     });
   };
   $('reloadBoards').onclick=()=>work(async()=>{await refresh();status('Đã tải danh sách. Mở bản lưu để nhận các logo mới.');});
   $('backupBoard').onchange=update;
-  $('toggleBoardLink').onclick=()=>work(async()=>{const board=current();await api('/'+board.id,{method:'PATCH',body:JSON.stringify({accepting:!board.accepting})});await refresh(board.id);status(current().accepting?'Đã mở nhận logo.':'Đã đóng link nhận logo.');});
   $('copyBoardLink').onclick=async()=>{
     const value=$('backupLink').value;if(!value)return;
     try{await navigator.clipboard.writeText(value);status('Đã sao chép link.');}catch{$('backupLink').focus();$('backupLink').select();status('Hãy sao chép link trong ô phía trên.');}

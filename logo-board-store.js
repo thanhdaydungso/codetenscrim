@@ -69,19 +69,19 @@ class LogoBoardStore {
         const temp=this.file+'.'+crypto.randomUUID()+'.tmp';await fs.writeFile(temp,JSON.stringify(boards));await fs.rename(temp,this.file);
       };
       const previousLength=boards.length;
-      boards=boards.map(item=>({...item,expires_at:item.expires_at||new Date(Date.parse(item.updated_at)+7_200_000).toISOString()})).filter(item=>Date.parse(item.expires_at)>now);
+      boards=boards.map(item=>({...item,accepting:item.data.assignments.includes(-1),expires_at:item.expires_at||new Date(Date.parse(item.updated_at)+7_200_000).toISOString()})).filter(item=>Date.parse(item.expires_at)>now);
       const deleted=previousLength-boards.length;
       if(deleted)await flush();
       if(action==='cleanup')return {deleted};
       let board=boards.find(item=>token ? item.token===token : item.id===id);
       const info=item=>({id:item.id,name:item.name,token:item.token,accepting:item.accepting,updated_at:item.updated_at,expires_at:item.expires_at,teamCount:item.data.teams.length,missing:item.data.assignments.filter(i=>i===-1).length});
       if(action==='list')return boards.map(info).reverse();
-      if(action==='create') {board={id:crypto.randomUUID(),token:crypto.randomBytes(32).toString('hex'),name:payload.name,data:payload.data,accepting:true,created_at:new Date(now).toISOString(),expires_at:new Date(now+7_200_000).toISOString(),updated_at:new Date(now).toISOString()};boards.push(board);}
+      if(action==='create') {board={id:crypto.randomUUID(),token:crypto.randomBytes(32).toString('hex'),name:payload.name,data:payload.data,accepting:payload.data.assignments.includes(-1),created_at:new Date(now).toISOString(),expires_at:new Date(now+7_200_000).toISOString(),updated_at:new Date(now).toISOString()};boards.push(board);}
       else {
         if(!board)throw fail(404,'Bảng logo không tồn tại hoặc đã hết hạn 2 giờ.');
         if(action==='read')return board;
         if(action==='public')return {name:board.name,accepting:board.accepting,expires_at:board.expires_at,teams:board.data.teams.map((team,index)=>({name:team.name,index,assigned:board.data.assignments[index]!==-1}))};
-        if(action==='close')board.accepting=payload.accepting;
+        if(action==='close')throw fail(405,'Link tự mở khi thiếu logo và tự khóa khi đủ logo.');
         else if(action==='submit'){
           if(!board.accepting)throw fail(409,'Link đã đóng nhận logo.');
           const slot=payload.slot;
@@ -89,6 +89,7 @@ class LogoBoardStore {
           if(board.data.assignments[slot]!==-1)throw fail(409,'Đội này đã có logo. Hãy tải lại bảng.');
           if(Buffer.byteLength(JSON.stringify(board.data))+Buffer.byteLength(JSON.stringify(payload.logo))>100_000_000)throw fail(413,'Bảng đã đầy. Hãy liên hệ BTC.');
           board.data.assignments[slot]=board.data.logos.length;board.data.logos.push(payload.logo);
+          board.accepting=board.data.assignments.includes(-1);
         } else throw fail(400,'Thao tác không hợp lệ.');
       }
       board.updated_at=new Date(now).toISOString();
