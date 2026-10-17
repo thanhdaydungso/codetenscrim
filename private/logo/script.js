@@ -3,7 +3,191 @@ const $ = id => document.getElementById(id);
 let teams = [], logos = [], busy = false, uploading = false;
 let manualAssignments = [];
 let customDefaultLogo = null;
-let borderColor = null;
+const BORDER_STYLES = [
+  {
+    "name": "Radiant",
+    "note": "?nh kim chuy?n s?c v?ng, h?ng, t?m; sang tr?ng v? r?c r?.",
+    "colors": [
+      "#FFF4B8",
+      "#FFD76A",
+      "#FF8B78",
+      "#E968B5"
+    ]
+  },
+  {
+    "name": "Holographic",
+    "note": "Hi?u ?ng c?u v?ng kim lo?i, ?a s?c v? ph?n quang.",
+    "colors": [
+      "#4DEBFF",
+      "#9C72FF",
+      "#FF6ABF",
+      "#FFD36A",
+      "#69F5CF"
+    ]
+  },
+  {
+    "name": "Pearlescent",
+    "note": "?nh ng?c trai pastel, m?m m?i v? ?ng ?nh.",
+    "colors": [
+      "#FFF7E8",
+      "#F9C9E7",
+      "#D7C7FF",
+      "#C7F4FF"
+    ]
+  },
+  {
+    "name": "Iridescent",
+    "note": "Ng? s?c ??i m?u theo ?nh s?ng, t?a l?p x? c?.",
+    "colors": [
+      "#FFE8A3",
+      "#FF9DCB",
+      "#C18BFF",
+      "#8CE9FF"
+    ]
+  },
+  {
+    "name": "Prismatic Gold",
+    "note": "V?ng kim pha h?ng t?m, hi?u ?ng kh?c x? ?nh s?ng.",
+    "colors": [
+      "#FFF5BF",
+      "#FFD56B",
+      "#FF91A8",
+      "#C58AFF"
+    ]
+  },
+  {
+    "name": "Chromatic",
+    "note": "Titan ?nh kim ?a s?c, s?c n?t v? hi?n ??i.",
+    "colors": [
+      "#5DE4FF",
+      "#8B6BFF",
+      "#FF71BC",
+      "#FFC979"
+    ]
+  },
+  {
+    "name": "Obsidian",
+    "note": "?en n?i l?a, x?m titan, b?c l?nh; b? ?n v? m?nh m?.",
+    "colors": [
+      "#080A10",
+      "#343B4B",
+      "#8B96A8",
+      "#D5DFED"
+    ]
+  },
+  {
+    "name": "Celestial",
+    "note": "?nh s?ng thi?n th?, v?ng sao k?t h?p t?m v? tr?.",
+    "colors": [
+      "#FFF0AF",
+      "#F4C66D",
+      "#BD8BE8",
+      "#6454B9"
+    ]
+  },
+  {
+    "name": "Ethereal",
+    "note": "?nh s?ng huy?n ?o, xanh b?ng v? t?m pastel.",
+    "colors": [
+      "#E9FFFF",
+      "#A5E7FF",
+      "#B9B0FF",
+      "#F2BDF4"
+    ]
+  },
+  {
+    "name": "Plasma",
+    "note": "N?ng l??ng ?i?n, xanh cyan v? t?m neon r?c r?.",
+    "colors": [
+      "#00EEFF",
+      "#377BFF",
+      "#8545FF",
+      "#F052D9"
+    ]
+  },
+  {
+    "name": "Molten Gold",
+    "note": "V?ng n?ng ch?y, cam l?a v? ?? dung nham.",
+    "colors": [
+      "#FFF4B3",
+      "#FFC341",
+      "#FF7B22",
+      "#D92D29"
+    ]
+  },
+  {
+    "name": "Mystic Opal",
+    "note": "?? opal ng? s?c, xanh ng?c v? t?m h?ng nh?.",
+    "colors": [
+      "#F8F5FF",
+      "#C6A6EF",
+      "#8FE9DD",
+      "#FFD4E6"
+    ]
+  },
+  {
+    "name": "Cyberpunk",
+    "note": "Neon h?ng t?m xanh ?i?n, t??ng ph?n m?nh.",
+    "colors": [
+      "#FF3DA8",
+      "#A14AFF",
+      "#4E5BFF",
+      "#00E5FF"
+    ]
+  },
+  {
+    "name": "Rose Titanium",
+    "note": "Titan h?ng ?nh b?c, thanh l?ch v? cao c?p.",
+    "colors": [
+      "#F8D5D6",
+      "#C88D9D",
+      "#777B95",
+      "#DDE3F0"
+    ]
+  },
+  {
+    "name": "Abyssal",
+    "note": "Xanh v?c s?u k?t h?p ng?c l?c b?o v? cyan.",
+    "colors": [
+      "#061B33",
+      "#125C79",
+      "#14C4C4",
+      "#70F3DC"
+    ]
+  },
+  {
+    "name": "Aurora Radiant",
+    "note": "C?c quang xanh, t?m v? h?ng.",
+    "colors": [
+      "#4ff1ce",
+      "#53c9ff",
+      "#9776ff",
+      "#ed85d9",
+      "#70e7c7"
+    ]
+  }
+];
+let borderColor = {style:0,colors:[...BORDER_STYLES[0].colors],angle:-.65,shine:.45,seed:.37};
+function borderGradient(ctx, highlight=false) {
+ const {colors,angle,shine}=borderColor;
+ const dx=Math.cos(angle)*SIZE/2,dy=Math.sin(angle)*SIZE/2;
+ const g=ctx.createLinearGradient(SIZE/2-dx,SIZE/2-dy,SIZE/2+dx,SIZE/2+dy);
+ if(highlight) [[0,'#ffffff00'],[shine-.12,'#ffffff00'],[shine,'#fffffff2'],[shine+.1,'#ffffff00'],[1,'#ffffff55']].forEach(([at,c])=>g.addColorStop(at,c));
+ else colors.forEach((c,i)=>g.addColorStop(i/(colors.length-1),c));
+ return g;
+}
+function syncBorderPicker() {
+ $('borderColor').style.background='linear-gradient('+(borderColor.angle*180/Math.PI+90)+'deg,'+borderColor.colors.join(',')+')';
+ $('borderColor').textContent=BORDER_STYLES[borderColor.style].name;
+ document.querySelectorAll('[data-border-style]').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===borderColor.style)));
+}
+function chooseBorder(style,random=false) {
+ if(busy||uploading)return;
+ const colors=[...BORDER_STYLES[style].colors];
+ if(random){const shift=Math.floor(Math.random()*colors.length);colors.push(...colors.splice(0,shift));if(Math.random()<.5)colors.reverse();}
+ updateBorder({style,colors,angle:random?Math.random()*Math.PI*2:-.65,shine:random?.25+Math.random()*.5:.45,seed:Math.random()});
+ syncBorderPicker();
+}
 function fallbackLogo() { return customDefaultLogo || flagLogo(); }
 function fallbackName() { return customDefaultLogo ? customDefaultLogo.name : 'C\u1edd Vi\u1ec7t Nam m\u1eb7c \u0111\u1ecbnh'; }
 const SIZE = 1000;
@@ -162,6 +346,7 @@ function render() {
   $('playnameCustom').disabled = busy || uploading;
   $('pickCustom').disabled = busy || uploading;
   $('borderColor').disabled = $('goldBorder').disabled = busy || uploading;
+  document.querySelectorAll('[data-border-style]').forEach(b=>b.disabled=busy||uploading);
   $('copyTable').disabled = !teams.length || busy || uploading;
   ['replace','append','reset','files'].forEach(id => $(id).disabled = busy || (id === 'files' && uploading));
 
@@ -211,27 +396,26 @@ function draw(canvas, logo) {
   ctx.restore();
   ctx.beginPath();
   ctx.arc(center, center, radius, 0, Math.PI * 2);
-  const gold = ctx.createLinearGradient(0, 0, SIZE, SIZE);
-  gold.addColorStop(0, '#C58A12');
-  gold.addColorStop(0.22, '#E5B936');
-  gold.addColorStop(0.48, '#FFF58A');
-  gold.addColorStop(0.58, '#F6E66B');
-  gold.addColorStop(0.8, '#DDB12C');
-  gold.addColorStop(1, '#B77B0C');
-  ctx.strokeStyle = borderColor || gold;
+  ctx.strokeStyle = borderGradient(ctx);
   ctx.lineWidth = borderWidth;
   ctx.stroke();
-  // Fine outlines remain within the 50px ring.
-  ctx.beginPath();
-  ctx.arc(center, center, center - 1.5, 0, Math.PI * 2);
-  ctx.strokeStyle = borderColor || '#9B722B';
-  ctx.lineWidth = 3;
+  // Specular reflections are included in exported PNGs.
+  ctx.strokeStyle = borderGradient(ctx,true);
   ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(center, center, center - borderWidth + 1, 0, Math.PI * 2);
-  ctx.strokeStyle = borderColor || '#695020';
-  ctx.lineWidth = 2;
-  ctx.stroke();
+  for(const [r,width,alpha] of [[center-2,3,.8],[center-borderWidth+2,3,.65],[radius-9,1.5,.45]]) {
+    ctx.beginPath();ctx.arc(center,center,r,0,Math.PI*2);
+    ctx.strokeStyle=borderGradient(ctx);ctx.lineWidth=width;ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,'+alpha+')';ctx.lineWidth=width/2;ctx.stroke();
+  }
+  ctx.save();
+  for(let i=0;i<10;i++) {
+    const angle=(i/10+borderColor.seed)*Math.PI*2;
+    const r=radius+Math.sin(i*7+borderColor.seed*20)*14;
+    const x=center+Math.cos(angle)*r,y=center+Math.sin(angle)*r,size=i%3===0?8:3;
+    ctx.beginPath();ctx.moveTo(x-size,y);ctx.lineTo(x+size,y);ctx.moveTo(x,y-size);ctx.lineTo(x,y+size);
+    ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=1.5;ctx.stroke();
+  }
+  ctx.restore();
 }
 function preview() { const logo = logos[Number($('previewSelect').value)] || (teams.length ? flagLogo() : null); draw($('preview'),logo); $('previewName').textContent = logo ? (logo.isFallback ? 'Cờ Việt Nam mặc định' : 'Logo ' + (logos.indexOf(logo) + 1)) : 'Chưa có logo'; }
 async function upload(files) {
@@ -381,8 +565,16 @@ function updateBorder(color) {
   if (customDefaultLogo) delete customDefaultLogo.avatarPreview;
   render();
 }
-$('borderColor').oninput=()=>updateBorder($('borderColor').value);
-$('goldBorder').onclick=()=>{if(busy||uploading)return;$('borderColor').value='#e5b936';updateBorder(null);};
+$('borderColor').onclick=()=>chooseBorder((borderColor.style+1)%BORDER_STYLES.length);
+$('goldBorder').onclick=()=>chooseBorder((borderColor.style+1+Math.floor(Math.random()*(BORDER_STYLES.length-1)))%BORDER_STYLES.length,true);
+BORDER_STYLES.forEach((style,i)=>{
+ const button=document.createElement('button');button.type='button';button.dataset.borderStyle=String(i);const title=document.createElement('strong');title.textContent=style.name;
+ const note=document.createElement('small');note.textContent=style.note;
+ button.append(title,note);button.title=style.colors.join(' | ');
+ button.style.setProperty('--border-palette','linear-gradient(105deg,'+style.colors.join(',')+')');
+ button.onclick=()=>chooseBorder(i);$('borderStyles').append(button);
+});
+syncBorderPicker();
 function clearDefaultLogo() {
   if (customDefaultLogo) URL.revokeObjectURL(customDefaultLogo.url);
   customDefaultLogo = null;

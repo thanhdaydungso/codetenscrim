@@ -72,3 +72,7 @@
 .logo-page #editor input { width:100%; }
 .logo-page #editor input[type=color] { height:34px; padding:2px; }
 .logo-page #preview { width:140px; height:140px; background:repeating-conic-gradient(#ddd 0% 25%,#fff 0% 50%) 0 / 16px 16px; }
+
+.border-styles{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}.border-styles button{position:relative;overflow:hidden;text-align:left;color:#182033;background:var(--border-palette);border:2px solid transparent;text-shadow:0 1px 6px #ffffffb0;padding:14px 16px}.border-styles button::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 20%,#ffffff9c 48%,transparent 65%);pointer-events:none}.border-styles button[aria-pressed=true]{border-color:#fff;box-shadow:0 0 0 2px #a9b7e8}.logo-page .color-row .border-current{flex:1;color:#182033;text-shadow:0 1px 5px white;border-color:#ffffff88}.color-row{flex-wrap:wrap}
+
+.border-styles button strong,.border-styles button small{position:relative;z-index:1;display:block;width:fit-content;max-width:100%;background:#ffffffe0;color:#182033;border-radius:5px;padding:3px 7px;text-shadow:none}.border-styles button small{font-weight:400;font-size:11px;line-height:1.5;margin-top:5px}
