@@ -29,13 +29,13 @@ Không dùng giá trị mặc định `change-me` khi triển khai thật.
 3. Chạy npm start. Lần đầu, nếu database chưa khởi tạo, server chuyển data/customs.json và data/submissions.json hiện có lên Supabase. Muốn chuyển dữ liệu đang chạy trên hosting cũ, cần dùng đúng hai file mới nhất của hosting đó trước lần khởi tạo này.
 4. Những lần khởi động/deploy sau chỉ dùng dữ liệu trên Supabase, không ghi đè bằng file JSON trong repo.
 
-Bảng scrim_state chứa custom và team/player dạng JSONB, giữ nguyên cấu trúc game và edit token. Mỗi yêu cầu đọc một snapshot. Mỗi lần ghi kiểm tra revision trong giao dịch PostgreSQL; nếu phiên khác vừa cập nhật, API trả 409 để người dùng tải lại, tránh ghi đè dữ liệu. Bảng scrim_backups giữ bản sao trước khi xóa team, RS hoặc migration.
+Bảng scrim_state chứa custom và team/player dạng JSONB, giữ nguyên cấu trúc game và edit token. Mỗi yêu cầu đọc một snapshot. Mỗi lần ghi kiểm tra revision trong giao dịch PostgreSQL; nếu phiên khác vừa cập nhật, API trả 409 để người dùng tải lại, tránh ghi đè dữ liệu. Bảng scrim_backups giữ bản sao trước khi xóa team, migration.
 
 Các bảng bật RLS, không cấp quyền cho anon/authenticated. Chỉ backend dùng secret key gọi RPC; không đưa secret vào frontend hoặc GitHub. Publishable key và JWKS URL chưa cần dùng vì đăng nhập BTC vẫn qua session cookie.
 
 Khi lỗi kết nối, thiếu quyền hoặc thiếu schema, server báo lỗi và không tự quay về file JSON. DATA_BACKEND=json chỉ dành cho phát triển offline và kiểm thử; DATA_DIR chọn thư mục file như trước.
 
-Custom đã thêm được giữ cố định, không cho xóa. Có thể khóa nhận hoặc RS team/player. Reset tự động và thủ công chỉ cập nhật danh sách team, giữ nguyên custom và các thiết lập.
+Custom đã thêm được giữ cố định, không cho xóa. Có thể khóa nhận, chỉnh sửa hoặc xóa từng team. Đã tắt reset tự động và thủ công; dữ liệu được giữ qua các ngày.
 
 ## API chính
 
@@ -51,7 +51,7 @@ Team gửi hoặc cập nhật code tên được tự động lưu với trạn
 
 Định dạng game chỉ có 15 `TeamID`, vì vậy `export-all` chỉ tạo file khi dữ liệu đã lưu thuộc đúng một custom. Nếu có nhiều custom, BTC phải chọn từng custom để tránh tạo `TeamID` trùng trong cùng file.
 
-Reset lúc 04:00 giờ Việt Nam chỉ xóa team/player. Danh sách custom, tên, màu, TeamRegion và trạng thái khóa được giữ nguyên, kể cả custom mới thêm. Nút RS team/player cũng giữ lại custom. Không cho phép xóa custom.
+Đã bỏ reset lúc 04:00 và chức năng RS hàng loạt. Team/player và custom được giữ đến khi BTC chỉnh sửa hoặc xóa từng team. Không cho phép xóa custom.
 
 ## Giao diện và kiểm tra
 

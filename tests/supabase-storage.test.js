@@ -116,32 +116,16 @@ async function start(dataDir, cloudUrl) {
     result = await fetch(appUrl + '/api/admin/customs/' + custom.id + '?confirm=yes', {method:'DELETE',headers:{Cookie:nextCookie}});
     assert.equal(result.status, 403);
     result = await fetch(appUrl + '/api/admin/customs/' + custom.id + '/teams', {method:'DELETE',headers:{Cookie:nextCookie}});
-    assert.equal(result.status, 200);
-    assert.equal(cloudState.teams.length, 0);
+    assert.equal(result.status, 405);
+    assert.equal(cloudState.teams.length, 1);
+    assert.equal(cloudState.teams[0].id, team.id);
     assert.deepEqual(cloudState.customs, before);
-    assert(backups.some(item => item.state.teams.some(item => item.id === team.id)), 'Reset must back up team data in cloud');
-    // Execute the real daily reset callback with cloud-backed writes.
-    await stop();
-    await db.run(() => db.write('teams', [{id:'daily-test'}]));
-    let dailyCallback;
-    const source = fs.readFileSync(path.join(ROOT,'server.js'),'utf8');
-    const context = {
-      Date, Math, console:{log(){},error(message){throw new Error(message);}},
-      nextVietnamReset:require('../reset-schedule').nextVietnamReset, TEAM_FILE:'teams',
-      withWriteLock:action=>db.run(action), backupFiles:label=>db.backup(label),
-      writeJsonAtomic:(file,value)=>db.write(file,value), setTimeout:callback=>{dailyCallback=callback;}
-    };
-    require('node:vm').runInNewContext(source.slice(source.indexOf('function scheduleDailyReset()'),source.indexOf('(storage ? storage.run(ensureStorage)'))+'\nscheduleDailyReset();', context);
-    await dailyCallback();
-    assert.deepEqual(cloudState.teams, []);
-    assert.deepEqual(cloudState.customs, before);
-    assert(backups.some(item=>item.label==='auto-reset-4am'));
-    await start(dataDir, cloudUrl);
+    assert(!backups.some(item => item.label.startsWith('clear-custom-')), 'Disabled reset created a backup');
     offline = true;
     result = await fetch(appUrl + '/api/customs');
     assert.equal(result.status, 503, 'Cloud errors must not fall back to local JSON');
     assert.deepEqual(cloudState.customs, before);
-    console.log('PASS supabase-storage: cloud persistence/export, restart, reset/backups, snapshot, concurrent writes, failures.');
+    console.log('PASS supabase-storage: cloud persistence/export, restart, disabled reset, snapshot, concurrent writes, failures.');
   } finally {
     offline = false; await stop();
     await new Promise(resolve => mock.close(resolve));

@@ -89,14 +89,6 @@ async function exportCustom(customId, cookie) {
 }
 
 async function run() {
-  const { nextVietnamReset } = require('../reset-schedule');
-  for (const [input, expected] of [
-    ['2026-10-09T20:59:59.000Z', '2026-10-09T21:00:00.000Z'],
-    ['2026-10-09T21:00:00.000Z', '2026-10-10T21:00:00.000Z'],
-    ['2026-10-09T22:00:00.000Z', '2026-10-10T21:00:00.000Z'],
-    ['2026-12-31T22:00:00.000Z', '2027-01-01T21:00:00.000Z']
-  ]) assert(nextVietnamReset(new Date(input)).toISOString() === expected, 'Incorrect Vietnam reset time: ' + input);
-
   port = await findFreePort();
   baseUrl = `http://127.0.0.1:${port}`;
   await startServer();
@@ -223,30 +215,17 @@ async function run() {
   const migratedTeams = JSON.parse(fs.readFileSync(storedTeamsFile, 'utf8'));
   assert(migratedTeams.find(team => team.id === submissionId).status === 'approved', 'Dữ liệu pending cũ chưa được tự động chuyển sang đã lưu.');
 
-  // A manual team reset must retain every custom and its settings.
+  // Retired reset endpoint must preserve both collections.
   const beforeReset = fs.readFileSync(customsFile, 'utf8');
-  await admin('/api/admin/customs/HV/teams', cookie, { method: 'DELETE' });
-  assert(fs.readFileSync(customsFile, 'utf8') === beforeReset, 'Manual reset changed custom definitions');
-  assert((await exportCustom('HV', cookie)).body.PlayerNameList.length === 0, 'Manual reset kept HV players');
-  assert((await exportCustom('MP', cookie)).body.PlayerNameList.length > 0, 'Manual reset cleared another custom');
-
-  // Trigger the real daily callback without waiting until 04:00.
+  const teamsBeforeReset = fs.readFileSync(storedTeamsFile, 'utf8');
+  const disabledReset = await admin('/api/admin/customs/HV/teams', cookie, { method: 'DELETE' });
+  assert(disabledReset.response.status === 405, 'Reset endpoint was not disabled');
+  assert(fs.readFileSync(customsFile, 'utf8') === beforeReset, 'Disabled reset changed customs');
+  assert(fs.readFileSync(storedTeamsFile, 'utf8') === teamsBeforeReset, 'Disabled reset changed teams');
   await stopServer();
-  const source = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
-  let dailyCallback;
-  const context = {
-    Date, Math, console: { log() {}, error(message) { throw new Error(message); } },
-    nextVietnamReset, TEAM_FILE: storedTeamsFile,
-    withWriteLock: action => action(), backupFiles: async () => {},
-    writeJsonAtomic: async (file, value) => fs.writeFileSync(file, JSON.stringify(value)),
-    setTimeout: callback => { dailyCallback = callback; }
-  };
-  require('vm').runInNewContext(source.slice(source.indexOf('function scheduleDailyReset()'), source.indexOf('(storage ? storage.run(ensureStorage)')) + '\nscheduleDailyReset();', context);
-  await dailyCallback();
-  assert(JSON.parse(fs.readFileSync(storedTeamsFile, 'utf8')).length === 0, 'Daily reset kept team/player data');
-  assert(fs.readFileSync(customsFile, 'utf8') === beforeReset, 'Daily reset changed custom definitions');
   await startServer();
   cookie = await login();
+  assert(fs.readFileSync(storedTeamsFile, 'utf8') === teamsBeforeReset, 'Restart cleared teams');
   const afterReset = await request('/api/customs');
   assert(afterReset.body.data.find(custom => custom.id === 'MP').color === '#654321', 'MP migration overwrote a later admin color change');
   assert(afterReset.body.data.some(custom => custom.id === 'NEW'), 'Added custom disappeared after reset/restart');

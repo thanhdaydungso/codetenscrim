@@ -89,7 +89,6 @@ function renderTeams() {
   const selected = customs.find(custom => custom.id === selectedId);
   $('#teamHeading').textContent = selected ? `TEAM TRONG ${selected.name}` : 'TEAM TRONG CUSTOM';
   $('#exportCustom').disabled = !selected;
-  $('#clearCustom').disabled = !selected;
   if (!selected) return $('#teamList').innerHTML = '<div class="empty-state">Chọn một custom để xem danh sách team.</div>';
   if (!teams.length) return $('#teamList').innerHTML = '<div class="empty-state">Custom này chưa có team.</div>';
   $('#teamSearchSummary').textContent = '';
@@ -351,12 +350,6 @@ async function download(path) {
 
 $('#exportCustom').addEventListener('click', () => download(`/api/admin/export/${encodeURIComponent(selectedId)}`).catch(error => showNotice(error.message, 'bad')));
 $('#exportAll').addEventListener('click', () => download('/api/admin/export-all').catch(error => showNotice(error.message, 'bad')));
-$('#clearCustom').addEventListener('click', async () => {
-  if (!selectedId || !confirm(`RS team/player trong custom ${selectedId}? Danh sách custom và cấu hình được giữ nguyên. Dữ liệu sẽ được sao lưu trước.`)) return;
-  try { const result = await api(`/api/admin/customs/${encodeURIComponent(selectedId)}/teams`, { method: 'DELETE' }); await loadCustoms(); showNotice(result.message); }
-  catch (error) { showNotice(error.message, 'bad'); }
-});
-
 (async function init() {
   try { await api('/api/admin/session'); showDashboard(); await loadCustoms(false); }
   catch { showLogin(); }

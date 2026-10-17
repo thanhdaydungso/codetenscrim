@@ -6,7 +6,6 @@ const fsp = fs.promises;
 const path = require('path');
 const crypto = require('crypto');
 const { URL } = require('url');
-const { nextVietnamReset } = require('./reset-schedule');
 
 // Đọc .env nếu có (không cần thư viện ngoài)
 for (const envName of ['.env.local', '.env']) {
@@ -660,7 +659,7 @@ async function handleAdminApi(req, res, url, cfg) {
   if (customMatch && req.method === 'DELETE') {
     const id = normalizeCustomId(decodeURIComponent(customMatch[1]));
     if (!customs.some(item => item.id === id)) return apiError(res, 404, 'Kh?ng t?m th?y custom.');
-    return apiError(res, 403, 'Custom ???c l?u c? ??nh, kh?ng ???c x?a. Ch? c? th? RS team/player ho?c kh?a nh?n.');
+    return apiError(res, 403, 'Custom được lưu cố định, không được xóa. Có thể khóa nhận.');
   }
 
   const customTeamsMatch = url.pathname.match(/^\/api\/admin\/customs\/([^/]+)\/teams$/);
@@ -831,15 +830,8 @@ async function handleAdminApi(req, res, url, cfg) {
     return downloadJson(res, prepared.output);
   }
 
-  const clearMatch = url.pathname.match(/^\/api\/admin\/customs\/([^/]+)\/teams$/);
-  if (clearMatch && req.method === 'DELETE') {
-    const id = normalizeCustomId(decodeURIComponent(clearMatch[1]));
-    return withWriteLock(async () => {
-      const latest = await readData(TEAM_FILE, []);
-      await backupFiles(`clear-custom-${id}`);
-      await writeJsonAtomic(TEAM_FILE, latest.filter(team => team.customId !== id));
-      return apiSuccess(res, 200, 'Đã RS team/player. Giữ nguyên custom và cấu hình; đã tạo bản sao lưu.');
-    });
+  if (req.method === 'DELETE' && /^\/api\/admin\/customs\/[^/]+\/teams$/.test(url.pathname)) {
+    return apiError(res, 405, 'Đã tắt RS dữ liệu. Hãy chỉnh sửa hoặc xóa từng team khi cần.');
   }
 
   return false;
@@ -899,32 +891,11 @@ async function handleRequest(req, res) {
 }
 const server = http.createServer((req, res) => storage ? storage.run(() => handleRequest(req, res)) : handleRequest(req, res));
 
-// Reset team/player lúc 4:00 sáng; giữ nguyên customs.json và cấu hình custom.
-function scheduleDailyReset() {
-  const now = new Date();
-  const next4am = nextVietnamReset(now);
-  const msUntil = next4am - now;
-  console.log(`[Reset] Lần reset tiếp theo lúc ${next4am.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) + ' (VN)'} (sau ${Math.round(msUntil / 60000)} phút)`);
-  setTimeout(async () => {
-    try {
-      await withWriteLock(async () => {
-        await backupFiles('auto-reset-4am');
-        await writeJsonAtomic(TEAM_FILE, []);
-        console.log(`[Reset] Đã RS team/player (giữ nguyên danh sách custom) lúc ${new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}`);
-      });
-    } catch (error) {
-      console.error('[Reset] Lỗi khi reset submissions:', error.message);
-    }
-    scheduleDailyReset(); // lên lịch cho ngày hôm sau
-  }, msUntil);
-}
-
 (storage ? storage.run(ensureStorage) : ensureStorage()).then(() => {
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`Web đang chạy tại http://localhost:${PORT}`);
     console.log(`Trang quản trị: http://localhost:${PORT}/admin`);
     if (ADMIN_KEY === 'change-me') console.warn('CẢNH BÁO: hãy đặt biến môi trường ADMIN_KEY trước khi đưa web lên mạng.');
-    scheduleDailyReset();
   });
 }).catch(error => {
   console.error('Không khởi tạo được kho dữ liệu:', error);
