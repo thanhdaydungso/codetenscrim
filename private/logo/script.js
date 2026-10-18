@@ -468,9 +468,7 @@ async function download() {
       const {logo,index}=matched[i];tell(`Đang tạo ảnh ${i+1}/${matched.length}…`);draw(canvas,logo);
       const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw new Error('Không tạo được ảnh PNG.');
       const name = exportName(index);
-      draw(canvas,logo,true);
-      const headBlob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!headBlob)throw new Error('HeadPics PNG failed.');
-      entries.push({name,data:new Uint8Array(await blob.arrayBuffer()),headData:new Uint8Array(await headBlob.arrayBuffer())});
+      entries.push({name,data:new Uint8Array(await blob.arrayBuffer())});
     }
     const url=URL.createObjectURL(makeZip(buildLogoBundle(entries, playname))),link=document.createElement('a');link.href=url;link.download='SCRIM ' + customId + ' - logo.zip';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
     tell('ZIP gồm 3 thư mục logo và ' + playname.name + '.');
