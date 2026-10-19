@@ -34,7 +34,7 @@ async function freePort(){return new Promise(resolve=>{const s=net.createServer(
     async function fits(){assert(await evaluate('document.documentElement.scrollWidth <= innerWidth + 1'),'Horizontal overflow at '+await evaluate('location.pathname'));}
     await size(1440,1000);await go('/','document.querySelectorAll(".custom-card").length===2');await fits();await screenshot('home-desktop');
     assert(await evaluate('document.querySelector(".hero h1") === null'),'Removed hero headline is still visible');
-    assert.equal(await evaluate('getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()'),'#dbfd85');
+    assert.equal(await evaluate('getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()'),'#0071e3');
     assert(await evaluate('!document.querySelector(".hero-guide") && !!document.querySelector("#heroSculpture")'));
     await evaluate('document.querySelector("#customDirectory").scrollIntoView({behavior:"instant"})');await screenshot('directory-desktop');
     await evaluate('scrollTo({top:0,behavior:"instant"})');
@@ -50,7 +50,10 @@ async function freePort(){return new Promise(resolve=>{const s=net.createServer(
     await evaluate('document.querySelector("#adminTeamSearch").value="123456789";document.querySelector("#adminTeamSearch").dispatchEvent(new Event("input"))');assert.equal(await evaluate('document.querySelectorAll(".team-editor:not([hidden])").length'),1);
     assert.equal(await evaluate('document.querySelector("[data-custom-id=MP] [data-field=color]").value'),'#ffffff');
     await size(390,844);await fits();await screenshot('admin-mobile');
-    await size(1440,1000);await go('/logo/','!!document.querySelector("#resetDefaultLogo")');await fits();await screenshot('logo-desktop');
+    await size(1440,1000);await go('/logo/','!!document.querySelector("#resetDefaultLogo")');await fits();
+    assert.equal(await evaluate('getComputedStyle(document.querySelector(".logo-main>.panel")).backgroundColor'),'rgb(255, 255, 255)','Studio panels must use the shared light theme');
+    assert.equal(await evaluate('getComputedStyle(document.querySelector("#replace")).color'),'rgb(255, 255, 255)','Primary studio buttons must have readable white labels');
+    await screenshot('logo-desktop');
     await evaluate('document.querySelector("#teamInput").value="1 UI TEAM";document.querySelector("#replace").click();document.querySelector("#borderColor").value="#ff0000";document.querySelector("#borderColor").dispatchEvent(new Event("input"));');assert.equal(await evaluate('document.querySelectorAll("#roster tr").length'),1);
     await size(390,844);await fits();await screenshot('logo-mobile');
     await until(()=>evaluate('!!document.querySelector("#saveBoard") && !document.querySelector("#saveBoard").disabled'),'backup UI');

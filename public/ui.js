@@ -33,17 +33,17 @@
     const t=reduced.matches ? .28 : time*.000055;
     const angle=t+pointer*.12,cos=Math.cos(angle),sin=Math.sin(angle);
     const points=vertices.map(([x,y,z])=>{const rx=x*cos+z*sin,rz=z*cos-x*sin;return [rx,y*.97-rz*.24,y*.24+rz*.97];});
-    const scale=width<600?Math.min(width*.44,height*.29):Math.min(width*.23,height*.32),centerX=width*.52,centerY=height*.45;
+    const scale=width<600?Math.min(width*.44,height*.17):Math.min(width*.23,height*.17),centerX=width*.5,centerY=height*.59;
     ctx.clearRect(0,0,width,height);
     // Soft ground shadow keeps the floating object grounded without image assets.
-    ctx.save();ctx.translate(centerX,height*.83);ctx.scale(1,.12);
-    const shadow=ctx.createRadialGradient(0,0,0,0,0,scale*.9);shadow.addColorStop(0,'#00000066');shadow.addColorStop(1,'#00000000');ctx.fillStyle=shadow;ctx.fillRect(-scale,-scale,scale*2,scale*2);ctx.restore();
+    ctx.save();ctx.translate(centerX,height*.77);ctx.scale(1,.12);
+    const shadow=ctx.createRadialGradient(0,0,0,0,0,scale*.9);shadow.addColorStop(0,'#00000026');shadow.addColorStop(1,'#00000000');ctx.fillStyle=shadow;ctx.fillRect(-scale,-scale,scale*2,scale*2);ctx.restore();
     const triangles=faces.map(ids=>{const [a,b,c]=ids.map(i=>points[i]);const ux=b[0]-a[0],uy=b[1]-a[1],uz=b[2]-a[2],vx=c[0]-a[0],vy=c[1]-a[1],vz=c[2]-a[2];const nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx,n=Math.hypot(nx,ny,nz)||1;return {ids,z:(a[2]+b[2]+c[2])/3,light:Math.max(0,(nx*.5+ny*.65-nz*.6)/n)};}).sort((a,b)=>a.z-b.z);
     const floatY=reduced.matches?0:Math.sin(time*.00045)*9;
     triangles.forEach(face=>{
       const value=Math.round(28+face.light*137);
       ctx.beginPath();face.ids.forEach((id,i)=>{const [x,y,z]=points[id],perspective=3.5/(3.5-z*.3);const px=centerX+x*scale*perspective,py=centerY+y*scale*perspective+floatY;i?ctx.lineTo(px,py):ctx.moveTo(px,py);});ctx.closePath();
-      ctx.fillStyle='rgb('+value+','+value+','+(value+3)+')';ctx.fill();ctx.strokeStyle='rgba(210,210,220,.035)';ctx.lineWidth=.5;ctx.stroke();
+      ctx.fillStyle='rgb('+Math.min(245,value+60)+','+Math.min(248,value+77)+','+Math.min(255,value+105)+')';ctx.fill();ctx.strokeStyle='rgba(210,210,220,.035)';ctx.lineWidth=.5;ctx.stroke();
     });
   }
   function tick(time){frame=0;if(!visible||document.hidden||reduced.matches)return;if(time-last>32){draw(time);last=time;}frame=requestAnimationFrame(tick);}
