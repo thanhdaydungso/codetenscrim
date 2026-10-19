@@ -126,7 +126,7 @@ async function submit(isUpdate) {
   const team = collectTeam();
   const errors = validateClient(team);
   if (errors.length) return showNotice(errors.join(' '), 'bad');
-  if (isUpdate && !activeEditToken) return showNotice('Hãy nhập và tải mã chỉnh sửa trước khi cập nhật.', 'bad');
+  if (isUpdate && !activeEditToken) return showNotice('Hãy nhập ID thành viên và tải đội trước khi cập nhật.', 'bad');
   busy = true;
   $('#submitButton').disabled = true;
   $('#updateButton').disabled = true;
@@ -136,9 +136,8 @@ async function submit(isUpdate) {
     });
     if (!isUpdate) {
       activeEditToken = result.data.editToken;
-      $('#editToken').value = activeEditToken;
-      localStorage.setItem(`editToken:${currentCustom.id}`, activeEditToken);
-      showNotice(`<b>${escapeHtml(result.message)}</b><br>Mã chỉnh sửa của đội: <code>${escapeHtml(activeEditToken)}</code><br><small>Hãy lưu mã này để cập nhật thông tin sau này.</small>`, 'ok', true);
+      $('#editPlayerId').value = team.players[0].playerId;
+      showNotice(result.message);
     } else showNotice(result.message);
   } catch (error) { showNotice(error.message, 'bad'); }
   finally {
@@ -149,17 +148,21 @@ async function submit(isUpdate) {
 }
 
 async function loadEdit() {
-  const token = $('#editToken').value.trim();
-  if (!/^[a-f0-9]{48}$/.test(token)) return showNotice('Mã chỉnh sửa không đúng định dạng.', 'bad');
+  if (busy || !currentCustom) return;
+  const playerId = $('#editPlayerId').value.trim();
+  activeEditToken = '';
+  if (!/^\d+$/.test(playerId) || !Number.isSafeInteger(Number(playerId))) return showNotice('ID game không hợp lệ.', 'bad');
+  busy = true;
+  $('#loadEdit').disabled = true;
   try {
-    const result = await api(`/api/submissions/${token}`);
-    if (result.data.team.customId !== currentCustom.id) return showNotice(`Mã này thuộc custom ${result.data.team.customId}.`, 'bad');
-    activeEditToken = token;
+    const result = await api('/api/submissions/lookup', { method: 'POST', body: JSON.stringify({ customId: currentCustom.id, playerId }) });
+    activeEditToken = result.data.editToken;
     $('#teamName').value = result.data.team.teamName;
     memberList.innerHTML = '';
     result.data.team.players.forEach(addMember);
     showNotice('Đã tải thông tin đội. Bạn có thể chỉnh sửa rồi bấm “Cập nhật thông tin”.');
   } catch (error) { showNotice(error.message, 'bad'); }
+  finally { busy = false; $('#loadEdit').disabled = false; }
 }
 
 memberList.addEventListener('click', event => {
@@ -190,18 +193,9 @@ $('#loadEdit').addEventListener('click', loadEdit);
     $('#customAvailability').className = `status ${currentCustom.status}`;
     $('#formShell').hidden = false;
     addMember();
-    const saved = localStorage.getItem(`editToken:${currentCustom.id}`);
-    if (saved) $('#editToken').value = saved;
     if (!currentCustom.available) {
       $('#submitButton').disabled = true;
       showNotice('Custom đã bị BTC khóa.', 'bad');
     }
   } catch (error) { showNotice(error.message, 'bad'); }
 })();
-
-$('#copyEditToken').addEventListener('click', async () => {
-  const token = $('#editToken').value.trim();
-  if (!/^[a-f0-9]{48}$/.test(token)) return showNotice('Chưa có mã chỉnh sửa hợp lệ để sao chép.', 'bad');
-  try { await navigator.clipboard.writeText(token); showNotice('Đã sao chép mã chỉnh sửa.'); }
-  catch { $('#editToken').focus(); $('#editToken').select(); showNotice('Hãy nhấn Ctrl+C để sao chép mã đã chọn.'); }
-});

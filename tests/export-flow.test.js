@@ -143,6 +143,14 @@ async function run() {
   const { submissionId, editToken } = created.body.data;
   assert(created.body.data.team.status === 'approved', 'Team gửi lên chưa được tự động lưu/duyệt.');
 
+  for (const playerId of ['992836236', '111222333']) {
+    const found = await request('/api/submissions/lookup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customId: 'HV', playerId }) });
+    assert(found.response.ok && found.body.data.team.id === submissionId && found.body.data.editToken === editToken, 'Each member ID must load the correct team');
+  }
+  for (const [customId, playerId, status] of [['MP', '992836236', 404], ['HV', '999999999', 404], ['HV', 'abc', 400]]) {
+    const found = await request('/api/submissions/lookup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customId, playerId }) });
+    assert(found.response.status === status, 'Reject invalid or wrong-custom member IDs');
+  }
   let output = await exportCustom('HV', cookie);
   assert(output.response.ok, 'Export failed.');
   assert(output.body.PlayerNameList.every(player => player.Color === '#FFFFFF'), 'Default player color must be white.');

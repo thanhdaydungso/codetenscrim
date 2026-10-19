@@ -568,6 +568,18 @@ async function handlePublicApi(req, res, url, cfg) {
     });
   }
 
+  if (req.method === 'POST' && url.pathname === '/api/submissions/lookup') {
+    const body = await parseBody(req);
+    const customId = normalizeCustomId(body.customId);
+    const playerId = String(body.playerId ?? '').trim();
+    if (!/^\d+$/.test(playerId) || !Number.isSafeInteger(Number(playerId))) return apiError(res, 400, 'ID game không hợp lệ.');
+    const team = teams.find(item => item.customId === customId && item.players.some(player => String(player.playerId) === playerId));
+    if (!team) return apiError(res, 404, 'Không tìm thấy đội có ID này trong custom đang chọn.');
+    const custom = customs.find(item => item.id === customId);
+    if (!custom || custom.locked) return apiError(res, 409, 'Custom đã bị BTC khóa.');
+    return apiSuccess(res, 200, 'Đã tìm thấy đội.', { editToken: team.editToken, team: { ...team, editToken: undefined } });
+  }
+
   const editMatch = url.pathname.match(/^\/api\/submissions\/([a-f0-9]{48})$/);
   if (editMatch && req.method === 'GET') {
     const team = teams.find(item => item.editToken === editMatch[1]);
