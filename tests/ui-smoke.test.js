@@ -51,7 +51,7 @@ async function freePort(){return new Promise(resolve=>{const s=net.createServer(
     assert.equal(await evaluate('document.querySelector("[data-custom-id=MP] [data-field=color]").value'),'#ffffff');
     await size(390,844);await fits();await screenshot('admin-mobile');
     await size(1440,1000);await go('/logo/','!!document.querySelector("#resetDefaultLogo")');await fits();
-    assert.equal(await evaluate('getComputedStyle(document.querySelector(".logo-main>.panel")).backgroundColor'),'rgb(255, 255, 255)','Studio panels must use the shared light theme');
+    assert.equal(await evaluate('getComputedStyle(document.querySelector(".logo-main>.panel")).backgroundColor'),'rgb(248, 248, 250)','Studio panels must use the shared soft gray theme');
     assert.equal(await evaluate('getComputedStyle(document.querySelector("#replace")).color'),'rgb(255, 255, 255)','Primary studio buttons must have readable white labels');
     await screenshot('logo-desktop');
     await evaluate('document.querySelector("#teamInput").value="1 UI TEAM";document.querySelector("#replace").click();document.querySelector("#borderColor").value="#ff0000";document.querySelector("#borderColor").dispatchEvent(new Event("input"));');assert.equal(await evaluate('document.querySelectorAll("#roster tr").length'),1);
