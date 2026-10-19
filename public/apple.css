@@ -20,3 +20,6 @@ h1,h2,h3{color:var(--text)}.hero h1,.section-heading h1,.section-heading h2,.log
 /* Hide vertical scroll tracks while retaining native wheel, touch and keyboard scrolling. */
 html,body,body *{scrollbar-width:none}
 html::-webkit-scrollbar,body::-webkit-scrollbar,body *::-webkit-scrollbar{width:0}
+
+/* The sidebar must scroll independently instead of inheriting panel clipping. */
+.admin-page .custom-sidebar{overflow-y:auto;overflow-x:hidden;min-height:0}

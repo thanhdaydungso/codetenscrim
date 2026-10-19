@@ -46,6 +46,13 @@ async function freePort(){return new Promise(resolve=>{const s=net.createServer(
     await size(1440,1000);await go('/admin','!!document.querySelector("#loginForm")');
     await evaluate('document.querySelector("#adminPassword").value="ui-test-secret";document.querySelector("#loginForm").requestSubmit()');await until(()=>evaluate('!document.querySelector("#dashboard").hidden && document.querySelectorAll(".team-editor").length===1'),'admin login');
     await fits();await screenshot('admin-desktop');
+    // Reproduce a long custom directory and send a real browser wheel event.
+    await evaluate('(()=>{const list=document.querySelector(".custom-admin-list");for(let i=0;i<10;i++){const card=list.lastElementChild.cloneNode(true);card.dataset.scrollFixture="true";list.append(card);}document.querySelector(".custom-sidebar").scrollIntoView({block:"start",behavior:"instant"});})()');
+    const sidebarPoint=await evaluate('(()=>{const r=document.querySelector(".custom-sidebar").getBoundingClientRect();return {x:r.left+r.width/2,y:Math.min(r.bottom,innerHeight)-40};})()');
+    await send('Input.dispatchMouseEvent',{type:'mouseWheel',...sidebarPoint,deltaX:0,deltaY:10000});
+    await until(()=>evaluate('document.querySelector(".custom-sidebar").scrollTop>0'),'sidebar wheel scrolling');
+    assert(await evaluate('(()=>{const side=document.querySelector(".custom-sidebar"),last=side.querySelector(".custom-admin-list").lastElementChild;return last.getBoundingClientRect().bottom<=side.getBoundingClientRect().bottom+1;})()'),'Wheel must reach the last custom in a long sidebar');
+    await evaluate('document.querySelectorAll("[data-scroll-fixture]").forEach(el=>el.remove());document.querySelector(".custom-sidebar").scrollTop=0;scrollTo({top:0,behavior:"instant"})');
     await evaluate('document.querySelector("#adminTeamSearch").value="missing";document.querySelector("#adminTeamSearch").dispatchEvent(new Event("input"))');assert.equal(await evaluate('document.querySelectorAll(".team-editor:not([hidden])").length'),0);
     await evaluate('document.querySelector("#adminTeamSearch").value="123456789";document.querySelector("#adminTeamSearch").dispatchEvent(new Event("input"))');assert.equal(await evaluate('document.querySelectorAll(".team-editor:not([hidden])").length'),1);
     assert.equal(await evaluate('document.querySelector("[data-custom-id=MP] [data-field=color]").value'),'#ffffff');
