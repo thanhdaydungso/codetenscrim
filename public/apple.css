@@ -16,3 +16,7 @@ h1,h2,h3{color:var(--text)}.hero h1,.section-heading h1,.section-heading h2,.log
 /* Match the specificity of the existing studio control layer. */
 .logo-page .site-header{background:#f5f5f7e6}.logo-page .brand{color:#1d1d1f;letter-spacing:normal}.logo-page .logo-main>.panel{background:#f8f8fa;border-color:#e5e5ea;border-radius:20px}.logo-page .section-head{border-color:#e5e5ea}.logo-page .section-head h2{font-weight:600}.logo-page .section-head span,.logo-page #empty,.logo-page .drop span{color:#6e6e73}.logo-page .logo-heading .eyebrow{font-family:inherit}.logo-page .color-row .border-current{color:#1d1d1f}.logo-page .avatar-roster td.logo-target{outline-color:#bdbdc3}.logo-page .hint{color:#6e6e73}
 :is(.admin-page,.logo-page) :is(button.primary,.button.primary,#exportCustom){background:#0071e3;border-color:#0071e3;color:#fff}:is(.admin-page,.logo-page) :is(button.primary,.button.primary,#exportCustom):hover:not(:disabled){background:#0077ed;border-color:#0077ed;color:#fff;box-shadow:0 4px 12px #0071e320}:is(.admin-page,.logo-page) .panel:hover{border-color:#d2d2d7;box-shadow:0 8px 28px #00000006}:is(.admin-page,.logo-page) :is(button.danger,.button.danger):hover:not(:disabled){color:#a12c23;background:#ffebe9;border-color:#e8b4ae}
+
+/* Hide vertical scroll tracks while retaining native wheel, touch and keyboard scrolling. */
+html,body,body *{scrollbar-width:none}
+html::-webkit-scrollbar,body::-webkit-scrollbar,body *::-webkit-scrollbar{width:0}
